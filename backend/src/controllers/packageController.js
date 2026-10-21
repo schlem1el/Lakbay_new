@@ -1,0 +1,550 @@
+import { db } from '../config/firebaseAdmin.js';
+import { sendSuccess, sendError } from '../utils/apiResponse.js';
+import { logActivity } from '../services/auditService.js';
+import { geocodeAddress } from '../services/locationService.js';
+
+const COLLECTION = 'tourPackages';
+
+/**
+ * Get all tour packages with comprehensive filters, search, and sorting
+ */
+export const getPackages = async (req, res, next) => {
+  try {
+    const {
+      search,
+      destinationId,
+      category,
+      minPrice,
+      maxPrice,
+      minDuration,
+      maxDuration,
+      sort,
+      featured,
+      operatorId,
+      approvalStatus,
+      myTours,
+      limit = 50,
+    } = req.query;
+
+    const isStaff = req.user && ['coordinator', 'support', 'guide', 'admin', 'operator'].includes(req.user.role);
+
+    let query = db.collection(COLLECTION);
+
+    if (!isStaff) {
+      query = query.where('isPublished', '==', true);
+    } else if (req.query.isPublished !== undefined) {
+      query = query.where('isPublished', '==', req.query.isPublished === 'true');
+    }
+
+    if (destinationId) {
+      query = query.where('destinationId', '==', destinationId);
+    }
+
+    if (category) {
+      query = query.where('category', '==', category);
+    }
+
+    if (featured !== undefined) {
+      query = query.where('isFeatured', '==', featured === 'true');
+    }
+
+    const snapshot = await query.limit(Number(limit)).get();
+    let packages = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+    // Rule: Public catalog only shows approved packages (or legacy packages without status)
+    if (!isStaff) {
+      packages = packages.filter((pkg) => !pkg.approvalStatus || pkg.approvalStatus === 'approved');
+    }
+
+    // Operator sandboxing: If logged in as operator and viewing their tours, scope to operatorId
+    if (req.user?.role === 'operator' && (myTours === 'true' || !['admin', 'coordinator'].includes(req.user.role))) {
+      packages = packages.filter((pkg) => pkg.operatorId === req.user.uid);
+    } else if (operatorId) {
+      packages = packages.filter((pkg) => pkg.operatorId === operatorId);
+    }
+
+    if (approvalStatus && approvalStatus !== 'all') {
+      packages = packages.filter((pkg) => (pkg.approvalStatus || 'approved') === approvalStatus);
+    }
+
+    // In-memory multi-field filtering
+    if (search && search.trim()) {
+      const term = search.trim().toLowerCase();
+      packages = packages.filter(
+        (pkg) =>
+          pkg.name?.toLowerCase().includes(term) ||
+          pkg.description?.toLowerCase().includes(term) ||
+          pkg.category?.toLowerCase().includes(term)
+      );
+    }
+
+    if (minPrice !== undefined) {
+      packages = packages.filter((pkg) => Number(pkg.pricePerPerson) >= Number(minPrice));
+    }
+    if (maxPrice !== undefined) {
+      packages = packages.filter((pkg) => Number(pkg.pricePerPerson) <= Number(maxPrice));
+    }
+    if (minDuration !== undefined) {
+      packages = packages.filter((pkg) => Number(pkg.durationDays) >= Number(minDuration));
+    }
+    if (maxDuration !== undefined) {
+      packages = packages.filter((pkg) => Number(pkg.durationDays) <= Number(maxDuration));
+    }
+
+    // Attach destination names and upcoming departure summaries
+    const destCache = new Map();
+    for (const pkg of packages) {
+      if (pkg.destinationId && !destCache.has(pkg.destinationId)) {
+        const dDoc = await db.collection('destinations').doc(pkg.destinationId).get();
+        destCache.set(pkg.destinationId, dDoc.exists ? dDoc.data().name : '');
+      }
+      pkg.destinationName = destCache.get(pkg.destinationId) || '';
+
+      // Upcoming open departures count
+      const today = new Date().toISOString().split('T')[0];
+      const depSnap = await db
+        .collection('departures')
+        .where('packageId', '==', pkg.id)
+        .get();
+
+      const openDeps = depSnap.docs
+        .map((d) => d.data())
+        .filter((d) => d.status === 'open' && (d.departureDate || '') >= today);
+
+      openDeps.sort((a, b) => (a.departureDate || '').localeCompare(b.departureDate || ''));
+
+      pkg.openDeparturesCount = openDeps.length;
+      pkg.nextDepartureDate = openDeps[0]?.departureDate || null;
+      pkg.availableSlots = openDeps.reduce(
+        (acc, d) => acc + Math.max(0, (d.capacity || 0) - (d.bookedCount || 0)),
+        0
+      );
+    }
+
+    // Sorting
+    if (sort === 'price_asc') {
+      packages.sort((a, b) => Number(a.pricePerPerson) - Number(b.pricePerPerson));
+    } else if (sort === 'price_desc') {
+      packages.sort((a, b) => Number(b.pricePerPerson) - Number(a.pricePerPerson));
+    } else if (sort === 'duration_asc') {
+      packages.sort((a, b) => Number(a.durationDays) - Number(b.durationDays));
+    } else if (sort === 'duration_desc') {
+      packages.sort((a, b) => Number(b.durationDays) - Number(a.durationDays));
+    } else if (sort === 'name_asc') {
+      packages.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    } else {
+      // Default: featured first, then newest
+      packages.sort((a, b) => {
+        if (a.isFeatured !== b.isFeatured) return b.isFeatured ? 1 : -1;
+        return (b.createdAt || '').localeCompare(a.createdAt || '');
+      });
+    }
+
+    return sendSuccess(res, packages, `Retrieved ${packages.length} tour package(s)`);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get featured tour packages for public homepage
+ */
+export const getFeaturedPackages = async (req, res, next) => {
+  try {
+    const snapshot = await db
+      .collection(COLLECTION)
+      .where('isPublished', '==', true)
+      .where('isFeatured', '==', true)
+      .limit(6)
+      .get();
+
+    const packages = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+    for (const pkg of packages) {
+      if (pkg.destinationId) {
+        const dDoc = await db.collection('destinations').doc(pkg.destinationId).get();
+        pkg.destinationName = dDoc.exists ? dDoc.data().name : '';
+      }
+    }
+
+    return sendSuccess(res, packages);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get package details with itinerary and open departures
+ */
+export const getPackageById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const doc = await db.collection(COLLECTION).doc(id).get();
+
+    if (!doc.exists) {
+      return sendError(res, 'Tour package not found', 404);
+    }
+
+    const pkg = { id: doc.id, ...doc.data() };
+    const isStaff = req.user && ['coordinator', 'support', 'guide', 'admin'].includes(req.user.role);
+
+    if (!pkg.isPublished && !isStaff) {
+      return sendError(res, 'Tour package is not published', 403);
+    }
+
+    // Fetch destination details
+    if (pkg.destinationId) {
+      const destDoc = await db.collection('destinations').doc(pkg.destinationId).get();
+      pkg.destination = destDoc.exists ? { id: destDoc.id, ...destDoc.data() } : null;
+    }
+
+    // Fetch upcoming departures
+    const today = new Date().toISOString().split('T')[0];
+    let depQuery = db.collection('departures').where('packageId', '==', id);
+
+    if (!isStaff) {
+      depQuery = depQuery.where('status', '==', 'open');
+    }
+
+    const depSnapshot = await depQuery.get();
+    let deps = depSnapshot.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
+      remainingSlots: Math.max(0, (d.data().capacity || 0) - (d.data().bookedCount || 0)),
+    }));
+
+    if (!isStaff) {
+      deps = deps.filter((d) => (d.departureDate || '') >= today);
+    }
+    deps.sort((a, b) => (a.departureDate || '').localeCompare(b.departureDate || ''));
+
+    pkg.departures = deps;
+
+    return sendSuccess(res, pkg);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Helper to auto-geocode itinerary activities if coordinates are missing
+ */
+const enrichItineraryWithCoordinates = async (itinerary = [], defaultLocation = '') => {
+  if (!Array.isArray(itinerary)) return [];
+
+  const enriched = [];
+  for (const day of itinerary) {
+    const activities = [];
+    for (const act of day.activities || []) {
+      let coords = act.coordinates;
+      if (!coords || !coords.lat || !coords.lng) {
+        const placeSearch = `${act.locationName || act.activityName}, ${defaultLocation}, Philippines`;
+        const geocoded = await geocodeAddress(placeSearch);
+        coords = { lat: geocoded.lat, lng: geocoded.lng };
+      }
+      activities.push({
+        timeSlot: act.timeSlot || '09:00 AM',
+        activityName: act.activityName || 'Activity',
+        locationName: act.locationName || '',
+        coordinates: coords,
+        description: act.description || '',
+      });
+    }
+
+    enriched.push({
+      dayNumber: day.dayNumber || enriched.length + 1,
+      dayTitle: day.dayTitle || `Day ${enriched.length + 1}`,
+      activities,
+    });
+  }
+
+  return enriched;
+};
+
+/**
+ * Create a new tour package (Coordinator / Admin / Operator)
+ * Enforces Operator metadata & pending approval status for operators
+ */
+export const createPackage = async (req, res, next) => {
+  try {
+    const {
+      name,
+      destinationId,
+      description = '',
+      category = 'Island Hopping',
+      pricePerPerson,
+      durationDays = 1,
+      durationNights = 0,
+      cancellationCutoffDays = 7,
+      itinerary = [],
+      inclusions = [],
+      exclusions = [],
+      accommodationDetails = '',
+      transportDetails = '',
+      imageUrls = [],
+      isPublished = false,
+      isFeatured = false,
+    } = req.body;
+
+    if (!name || !destinationId || pricePerPerson === undefined) {
+      return sendError(res, 'Name, destinationId, and pricePerPerson are required', 400);
+    }
+
+    // Verify destination exists
+    const destDoc = await db.collection('destinations').doc(destinationId).get();
+    if (!destDoc.exists) {
+      return sendError(res, 'Specified destination does not exist', 400);
+    }
+    const destName = destDoc.data().name;
+
+    // Enrich itinerary with coordinates
+    const enrichedItinerary = await enrichItineraryWithCoordinates(itinerary, destName);
+
+    const isOperator = req.user?.role === 'operator';
+    const operatorId = isOperator ? req.user.uid : (req.body.operatorId || 'platform');
+    const operatorName = isOperator
+      ? (req.user.agencyName || req.user.fullName || req.user.email?.split('@')[0] || 'Tour Operator')
+      : (req.body.operatorName || 'Lakbay Official');
+    const approvalStatus = isOperator ? 'pending_approval' : (req.body.approvalStatus || 'approved');
+    const isPublishedSafe = isOperator ? false : Boolean(isPublished);
+
+    const now = new Date().toISOString();
+    const packageData = {
+      name: name.trim(),
+      destinationId,
+      description,
+      category,
+      pricePerPerson: Number(pricePerPerson),
+      durationDays: Number(durationDays),
+      durationNights: Number(durationNights),
+      cancellationCutoffDays: Number(cancellationCutoffDays) || 7,
+      itinerary: enrichedItinerary,
+      inclusions: Array.isArray(inclusions) ? inclusions : [],
+      exclusions: Array.isArray(exclusions) ? exclusions : [],
+      accommodationDetails,
+      transportDetails,
+      imageUrls: Array.isArray(imageUrls) ? imageUrls : [],
+      isPublished: isPublishedSafe,
+      isFeatured: isOperator ? false : Boolean(isFeatured),
+      operatorId,
+      operatorName,
+      approvalStatus,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const docRef = await db.collection(COLLECTION).add(packageData);
+    const created = { id: docRef.id, ...packageData };
+
+    await logActivity({
+      actorUid: req.user.uid,
+      actorRole: req.user.role,
+      action: 'CREATE_PACKAGE',
+      targetType: 'package',
+      targetId: docRef.id,
+      metadata: { name: created.name, price: created.pricePerPerson, operatorId, approvalStatus },
+    });
+
+    return sendSuccess(res, created, 'Tour package created successfully', 201);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update a tour package (Coordinator / Admin / Operator)
+ * Enforces Rule D: Operators cannot modify another operator's tours.
+ */
+export const updatePackage = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const docRef = db.collection(COLLECTION).doc(id);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      return sendError(res, 'Tour package not found', 404);
+    }
+
+    const existingData = doc.data();
+    const isOperator = req.user.role === 'operator';
+
+    // Rule D: Operator Ownership Guard
+    if (isOperator && existingData.operatorId && existingData.operatorId !== req.user.uid) {
+      return sendError(res, "Forbidden: Operators cannot modify another operator's tours (Rule D).", 403);
+    }
+
+    const updates = { ...req.body };
+    delete updates.id;
+    delete updates.createdAt;
+    updates.updatedAt = new Date().toISOString();
+
+    if (updates.pricePerPerson !== undefined) {
+      updates.pricePerPerson = Number(updates.pricePerPerson);
+    }
+    if (updates.durationDays !== undefined) {
+      updates.durationDays = Number(updates.durationDays);
+    }
+    if (updates.durationNights !== undefined) {
+      updates.durationNights = Number(updates.durationNights);
+    }
+    if (updates.cancellationCutoffDays !== undefined) {
+      updates.cancellationCutoffDays = Number(updates.cancellationCutoffDays);
+    }
+
+    // Geocode new itinerary activities if provided
+    if (updates.itinerary) {
+      const destId = updates.destinationId || doc.data().destinationId;
+      const destDoc = await db.collection('destinations').doc(destId).get();
+      const destName = destDoc.exists ? destDoc.data().name : '';
+      updates.itinerary = await enrichItineraryWithCoordinates(updates.itinerary, destName);
+    }
+
+    // If an operator modifies their package, set back to pending_approval and unpublish until reviewed
+    if (isOperator) {
+      updates.approvalStatus = 'pending_approval';
+      updates.isPublished = false;
+      delete updates.isFeatured;
+      delete updates.operatorId;
+    }
+
+    await docRef.update(updates);
+    const updated = await docRef.get();
+
+    await logActivity({
+      actorUid: req.user.uid,
+      actorRole: req.user.role,
+      action: 'UPDATE_PACKAGE',
+      targetType: 'package',
+      targetId: id,
+      metadata: { updatedFields: Object.keys(updates) },
+    });
+
+    return sendSuccess(res, { id, ...updated.data() }, 'Tour package updated successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Delete a tour package safely (Coordinator / Admin / Operator)
+ * Enforces Rule D: Operators cannot delete another operator's tours.
+ */
+export const deletePackage = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const docRef = db.collection(COLLECTION).doc(id);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      return sendError(res, 'Tour package not found', 404);
+    }
+
+    const isOperator = req.user.role === 'operator';
+    if (isOperator && doc.data().operatorId && doc.data().operatorId !== req.user.uid) {
+      return sendError(res, "Forbidden: Operators cannot delete another operator's tours (Rule D).", 403);
+    }
+
+    // Safety guard: prevent deleting packages with existing bookings
+    const bookingsSnap = await db.collection('bookings').where('packageId', '==', id).limit(1).get();
+    if (!bookingsSnap.empty) {
+      return sendError(
+        res,
+        'Cannot delete package with existing booking history. Please unpublish or archive it instead.',
+        400
+      );
+    }
+
+    const packageName = doc.data().name;
+    await docRef.delete();
+
+    await logActivity({
+      actorUid: req.user.uid,
+      actorRole: req.user.role,
+      action: 'DELETE_PACKAGE',
+      targetType: 'package',
+      targetId: id,
+      metadata: { name: packageName },
+    });
+
+    return sendSuccess(res, null, `Tour package "${packageName}" deleted successfully`);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Approve a tour package for publishing (Admin / Coordinator)
+ */
+export const approvePackage = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const docRef = db.collection(COLLECTION).doc(id);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      return sendError(res, 'Tour package not found', 404);
+    }
+
+    const now = new Date().toISOString();
+    await docRef.update({
+      approvalStatus: 'approved',
+      isPublished: true,
+      approvedAt: now,
+      approvedBy: req.user.uid,
+      rejectionReason: '',
+      updatedAt: now,
+    });
+
+    await logActivity({
+      actorUid: req.user.uid,
+      actorRole: req.user.role,
+      action: 'APPROVE_PACKAGE',
+      targetType: 'package',
+      targetId: id,
+      metadata: { name: doc.data().name, operatorId: doc.data().operatorId },
+    });
+
+    return sendSuccess(res, { id, approvalStatus: 'approved', isPublished: true }, 'Tour package approved and published successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Reject a tour package (Admin / Coordinator)
+ */
+export const rejectPackage = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { reason = 'Package details require adjustment' } = req.body;
+    const docRef = db.collection(COLLECTION).doc(id);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      return sendError(res, 'Tour package not found', 404);
+    }
+
+    const now = new Date().toISOString();
+    await docRef.update({
+      approvalStatus: 'rejected',
+      isPublished: false,
+      rejectionReason: reason,
+      rejectedAt: now,
+      rejectedBy: req.user.uid,
+      updatedAt: now,
+    });
+
+    await logActivity({
+      actorUid: req.user.uid,
+      actorRole: req.user.role,
+      action: 'REJECT_PACKAGE',
+      targetType: 'package',
+      targetId: id,
+      metadata: { name: doc.data().name, reason },
+    });
+
+    return sendSuccess(res, { id, approvalStatus: 'rejected', isPublished: false, rejectionReason: reason }, 'Tour package rejected');
+  } catch (error) {
+    next(error);
+  }
+};

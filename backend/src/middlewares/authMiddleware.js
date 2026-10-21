@@ -1,0 +1,64 @@
+import { auth, db, isFirebaseInitialized } from '../config/firebaseAdmin.js';
+import { sendError } from '../utils/apiResponse.js';
+
+export const verifyToken = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return sendError(res, 'Authentication token missing or invalid format (Bearer token required)', 401);
+    }
+
+    if (!isFirebaseInitialized || !auth) {
+      return sendError(
+        res,
+        'Authentication service is temporarily unavailable (Firebase Admin not initialized)',
+        503
+      );
+    }
+
+    const token = authHeader.split('Bearer ')[1].trim();
+    if (!token) {
+      return sendError(res, 'Authentication token missing', 401);
+    }
+
+    // Verify token using Firebase Admin SDK
+    const decodedToken = await auth.verifyIdToken(token);
+
+    // Look up user document in Firestore to check account status & role
+    let role = decodedToken.role || 'customer';
+    let accountStatus = 'active';
+    let fullName = decodedToken.name || '';
+
+    if (db) {
+      const userDoc = await db.collection('users').doc(decodedToken.uid).get();
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        role = userData.role || role;
+        accountStatus = userData.accountStatus || 'active';
+        fullName = userData.fullName || fullName;
+      }
+    }
+
+    if (accountStatus === 'deactivated' || accountStatus === 'disabled') {
+      return sendError(res, 'Your account has been deactivated. Please contact support.', 403);
+    }
+
+    // Attach user information to request
+    req.user = {
+      uid: decodedToken.uid,
+      email: decodedToken.email,
+      fullName,
+      role,
+      accountStatus,
+      tokenClaims: decodedToken,
+    };
+
+    next();
+  } catch (error) {
+    if (error.code === 'auth/id-token-expired') {
+      return sendError(res, 'Session expired. Please log in again.', 401);
+    }
+    return sendError(res, 'Invalid authentication token: ' + error.message, 401);
+  }
+};
