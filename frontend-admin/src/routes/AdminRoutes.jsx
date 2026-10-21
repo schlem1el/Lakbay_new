@@ -8,6 +8,7 @@ import { StaffLoginPage } from '../pages/auth/StaffLoginPage';
 import { DashboardOverviewPage } from '../pages/dashboard/DashboardOverviewPage';
 import { DestinationsManagePage } from '../pages/catalog/DestinationsManagePage';
 import { PackagesManagePage } from '../pages/catalog/PackagesManagePage';
+import { PromotionsManagePage } from '../pages/catalog/PromotionsManagePage';
 import { DeparturesManagePage } from '../pages/operations/DeparturesManagePage';
 import { BookingsManagePage } from '../pages/operations/BookingsManagePage';
 import { PaymentsRefundsPage } from '../pages/operations/PaymentsRefundsPage';
@@ -59,6 +60,14 @@ export const AdminRoutes = () => {
           element={
             <RoleRoute allowedRoles={['admin', 'coordinator', 'operator']}>
               <PackagesManagePage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="catalog/promotions"
+          element={
+            <RoleRoute allowedRoles={['admin', 'coordinator']}>
+              <PromotionsManagePage />
             </RoleRoute>
           }
         />

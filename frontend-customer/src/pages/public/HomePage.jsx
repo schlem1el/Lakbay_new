@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { destinationsApi } from '../../api/destinationsApi';
 import { packagesApi } from '../../api/packagesApi';
+import { promotionsApi } from '../../api/promotionsApi';
 import { externalApi } from '../../api/externalApi';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
@@ -35,6 +36,7 @@ export const HomePage = () => {
   // Catalog data
   const [featuredDestinations, setFeaturedDestinations] = useState([]);
   const [popularPackages, setPopularPackages] = useState([]);
+  const [promotions, setPromotions] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Debounced Geoapify destination autocomplete
@@ -59,16 +61,18 @@ export const HomePage = () => {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Load featured destinations and popular packages
+  // Load featured destinations, popular packages, and promotional campaigns
   useEffect(() => {
     const loadHomeData = async () => {
       try {
-        const [destRes, pkgRes] = await Promise.all([
+        const [destRes, pkgRes, promoRes] = await Promise.all([
           destinationsApi.getFeatured(),
           packagesApi.getFeatured(),
+          promotionsApi.getPublished().catch(() => ({ data: [] })),
         ]);
         setFeaturedDestinations(destRes.data || []);
         setPopularPackages(pkgRes.data || []);
+        setPromotions(promoRes.data || []);
       } catch (err) {
         console.error('Home data load error:', err);
       } finally {
@@ -249,6 +253,50 @@ export const HomePage = () => {
         </div>
       </section>
 
+      {/* PROMOTIONAL CAMPAIGN BANNER / RIBBON */}
+      {promotions.length > 0 && (
+        <section className="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 text-white py-6 border-y border-emerald-700/60 shadow-md">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-400 text-slate-950 font-black shadow-lg">
+                  <Sparkles className="h-6 w-6 fill-slate-950" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded bg-amber-400/20 px-2 py-0.5 text-[11px] font-extrabold tracking-wider text-amber-300 uppercase border border-amber-300/30">
+                      {promotions[0].badgeText || 'SPECIAL OFFER'}
+                    </span>
+                    {promotions[0].discountHighlight && (
+                      <span className="text-xs font-semibold text-emerald-300">
+                        • {promotions[0].discountHighlight}
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold font-heading text-white mt-0.5">
+                    {promotions[0].title}
+                  </h3>
+                  {promotions[0].subtitle && (
+                    <p className="text-xs sm:text-sm text-slate-300 max-w-2xl mt-0.5">
+                      {promotions[0].subtitle}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 shrink-0">
+                <Link to={promotions[0].actionUrl || '/packages?discounted=true'}>
+                  <Button className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-sm px-6 shadow-md cursor-pointer">
+                    {promotions[0].actionLabel || 'Explore Discounted Tours'}
+                    <ArrowRight className="ml-1.5 h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* 2. FEATURED DESTINATIONS */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -357,7 +405,12 @@ export const HomePage = () => {
                       {pkg.durationDays}D / {pkg.durationNights}N
                     </Badge>
                   </div>
-                  <div className="absolute top-3 right-3">
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                    {pkg.discountPercent > 0 && (
+                      <Badge className="bg-rose-600 text-white font-extrabold shadow-sm text-xs px-2 py-0.5">
+                        {pkg.discountPercent}% OFF
+                      </Badge>
+                    )}
                     <Badge className="bg-emerald-600 text-white font-bold shadow-sm text-xs">
                       {pkg.category}
                     </Badge>
@@ -392,10 +445,31 @@ export const HomePage = () => {
                   <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-between">
                     <div>
                       <span className="block text-[11px] text-slate-400 font-medium">Starting from</span>
-                      <span className="text-xl font-black text-slate-900 font-heading">
-                        {formatCurrency(pkg.pricePerPerson)}
-                      </span>
-                      <span className="text-[10px] text-slate-500 ml-1">/ person</span>
+                      {pkg.discountPercent > 0 ? (
+                        <div>
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="text-xl font-black text-emerald-700 font-heading">
+                              {formatCurrency(pkg.effectivePrice || pkg.discountPrice)}
+                            </span>
+                            <span className="text-[10px] text-slate-500">/ person</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-xs mt-0.5">
+                            <span className="text-slate-400 line-through">
+                              {formatCurrency(pkg.pricePerPerson)}
+                            </span>
+                            <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1 rounded">
+                              Save {formatCurrency(pkg.pricePerPerson - (pkg.effectivePrice || pkg.discountPrice))}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <span className="text-xl font-black text-slate-900 font-heading">
+                            {formatCurrency(pkg.pricePerPerson)}
+                          </span>
+                          <span className="text-[10px] text-slate-500 ml-1">/ person</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex gap-2">

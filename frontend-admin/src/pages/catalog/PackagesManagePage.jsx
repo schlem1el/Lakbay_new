@@ -72,6 +72,7 @@ export const PackagesManagePage = () => {
     category: 'Island Hopping',
     description: '',
     pricePerPerson: '',
+    discountPercent: 0,
     durationDays: 3,
     durationNights: 2,
     cancellationCutoffDays: 7,
@@ -128,6 +129,7 @@ export const PackagesManagePage = () => {
       category: 'Island Hopping',
       description: '',
       pricePerPerson: '',
+      discountPercent: 0,
       durationDays: 3,
       durationNights: 2,
       cancellationCutoffDays: 7,
@@ -157,6 +159,7 @@ export const PackagesManagePage = () => {
       category: pkg.category || 'Island Hopping',
       description: pkg.description || '',
       pricePerPerson: pkg.pricePerPerson?.toString() || '',
+      discountPercent: pkg.discountPercent || 0,
       durationDays: pkg.durationDays || 1,
       durationNights: pkg.durationNights || 0,
       cancellationCutoffDays: pkg.cancellationCutoffDays || 7,
@@ -244,6 +247,7 @@ export const PackagesManagePage = () => {
         category: formData.category,
         description: formData.description,
         pricePerPerson: Number(formData.pricePerPerson),
+        discountPercent: Number(formData.discountPercent) || 0,
         durationDays: Number(formData.durationDays),
         durationNights: Number(formData.durationNights),
         cancellationCutoffDays: Number(formData.cancellationCutoffDays),
@@ -507,8 +511,22 @@ export const PackagesManagePage = () => {
                     <TableCell className="text-sm text-slate-600 font-medium">
                       {pkg.durationDays}D / {pkg.durationNights || 0}N
                     </TableCell>
-                    <TableCell className="font-bold text-slate-900">
-                      {formatPHP(pkg.pricePerPerson)}
+                    <TableCell className="text-slate-900">
+                      {pkg.discountPercent > 0 ? (
+                        <div>
+                          <div className="font-bold text-emerald-700 flex items-center gap-1.5">
+                            {formatPHP(pkg.effectivePrice || pkg.discountPrice)}
+                            <span className="text-[10px] font-extrabold bg-rose-100 text-rose-700 px-1.5 py-0.2 rounded">
+                              -{pkg.discountPercent}%
+                            </span>
+                          </div>
+                          <div className="text-xs text-slate-400 line-through">
+                            {formatPHP(pkg.pricePerPerson)}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="font-bold">{formatPHP(pkg.pricePerPerson)}</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {pkg.approvalStatus === 'pending_approval' ? (
@@ -654,7 +672,7 @@ export const PackagesManagePage = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="pkg-price" className="text-xs font-semibold">
                   Price per Person (PHP) *
@@ -666,6 +684,33 @@ export const PackagesManagePage = () => {
                   value={formData.pricePerPerson}
                   onChange={(e) => setFormData({ ...formData, pricePerPerson: e.target.value })}
                   required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="pkg-discount" className="text-xs font-semibold">
+                    Discount (%)
+                  </Label>
+                  {Number(formData.discountPercent) > 0 && Number(formData.pricePerPerson) > 0 && (
+                    <span className="text-[10px] font-bold text-emerald-600">
+                      Pays {formatPHP(Math.round(Number(formData.pricePerPerson) * (1 - Number(formData.discountPercent) / 100)))}
+                    </span>
+                  )}
+                </div>
+                <Input
+                  id="pkg-discount"
+                  type="number"
+                  min="0"
+                  max="90"
+                  placeholder="0 (e.g. 15 for 15% off)"
+                  value={formData.discountPercent}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      discountPercent: Math.max(0, Math.min(90, parseInt(e.target.value) || 0)),
+                    })
+                  }
                 />
               </div>
 

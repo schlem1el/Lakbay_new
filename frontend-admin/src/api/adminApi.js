@@ -75,6 +75,13 @@ export const adminApi = {
   moderateReview: (id, data) => axiosClient.patch(`/reviews/${id}/moderate`, data),
   deleteReview: (id) => axiosClient.delete(`/reviews/${id}`),
 
+  // Promotions & Campaign Banners Management (Step 6)
+  getPromotions: () => axiosClient.get('/promotions/admin/all'),
+  createPromotion: (data) => axiosClient.post('/promotions/admin', data),
+  updatePromotion: (id, data) => axiosClient.put(`/promotions/admin/${id}`, data),
+  togglePromotion: (id) => axiosClient.patch(`/promotions/admin/${id}/toggle`),
+  deletePromotion: (id) => axiosClient.delete(`/promotions/admin/${id}`),
+
   // Location & Weather Proxies
   autocompleteLocation: (text) =>
     axiosClient.get('/external/location/autocomplete', { params: { text } }),

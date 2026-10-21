@@ -11,6 +11,7 @@ import adminRoutes from './adminRoutes.js';
 import externalRoutes from './externalRoutes.js';
 import reviewRoutes from './reviewRoutes.js';
 import operatorRoutes from './operatorRoutes.js';
+import promotionRoutes from './promotionRoutes.js';
 
 const router = Router();
 
@@ -27,5 +28,6 @@ router.use('/admin', adminRoutes);
 router.use('/external', externalRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/operators', operatorRoutes);
+router.use('/promotions', promotionRoutes);
 
 export default router;

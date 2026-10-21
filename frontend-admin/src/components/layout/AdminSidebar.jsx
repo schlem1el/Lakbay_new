@@ -16,6 +16,7 @@ import {
   Settings,
   Star,
   Building2,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Badge } from '../ui/badge';
@@ -73,6 +74,12 @@ export const AdminSidebar = () => {
           to: '/catalog/packages',
           icon: Package,
           roles: ['admin', 'coordinator', 'operator'],
+        },
+        {
+          name: 'Promotions',
+          to: '/catalog/promotions',
+          icon: Sparkles,
+          roles: ['admin', 'coordinator'],
         },
       ],
     },

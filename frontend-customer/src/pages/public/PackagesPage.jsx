@@ -18,11 +18,13 @@ import {
   Loader2,
   Sparkles,
   Star,
+  Percent,
 } from 'lucide-react';
 
 export const PackagesPage = () => {
   const [searchParams] = useSearchParams();
   const initialSearch = searchParams.get('search') || '';
+  const initialDiscounted = searchParams.get('discounted') === 'true';
 
   const [packages, setPackages] = useState([]);
   const [destinations, setDestinations] = useState([]);
@@ -33,6 +35,7 @@ export const PackagesPage = () => {
   const [selectedDestination, setSelectedDestination] = useState('');
   const [category, setCategory] = useState('');
   const [departureDate, setDepartureDate] = useState('');
+  const [onlyDiscounted, setOnlyDiscounted] = useState(initialDiscounted);
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [sort, setSort] = useState('featured');
@@ -52,6 +55,7 @@ export const PackagesPage = () => {
       if (selectedDestination) params.destinationId = selectedDestination;
       if (category) params.category = category;
       if (departureDate) params.departureDate = departureDate;
+      if (onlyDiscounted) params.discounted = 'true';
       if (minPrice) params.minPrice = minPrice;
       if (maxPrice) params.maxPrice = maxPrice;
       if (sort) params.sort = sort;
@@ -67,7 +71,7 @@ export const PackagesPage = () => {
 
   useEffect(() => {
     fetchPackages();
-  }, [selectedDestination, category, departureDate, sort]);
+  }, [selectedDestination, category, departureDate, onlyDiscounted, sort]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -79,6 +83,7 @@ export const PackagesPage = () => {
     setSelectedDestination('');
     setCategory('');
     setDepartureDate('');
+    setOnlyDiscounted(false);
     setMinPrice('');
     setMaxPrice('');
     setSort('featured');
@@ -187,6 +192,20 @@ export const PackagesPage = () => {
                   );
                 })}
 
+                {/* Special Direct Discounts Pill */}
+                <button
+                  type="button"
+                  onClick={() => setOnlyDiscounted(!onlyDiscounted)}
+                  className={`rounded-full px-3 py-1 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ml-1 ${
+                    onlyDiscounted
+                      ? 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-400'
+                      : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
+                  }`}
+                >
+                  <Percent className="h-3 w-3" />
+                  Special Discounts
+                </button>
+
                 {departureDate && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 text-xs font-semibold ml-1">
                     <Calendar className="h-3 w-3" />
@@ -271,7 +290,12 @@ export const PackagesPage = () => {
                         {pkg.durationDays}D / {pkg.durationNights}N
                       </Badge>
                     </div>
-                    <div className="absolute top-3 right-3">
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                      {pkg.discountPercent > 0 && (
+                        <Badge className="bg-rose-600 text-white font-extrabold text-xs shadow-sm px-2 py-0.5">
+                          {pkg.discountPercent}% OFF
+                        </Badge>
+                      )}
                       <Badge className="bg-emerald-600 text-white font-bold text-xs shadow-sm">
                         {pkg.category}
                       </Badge>
@@ -317,9 +341,25 @@ export const PackagesPage = () => {
                 <div className="p-6 pt-0 border-t border-slate-100 mt-4 flex items-center justify-between">
                   <div>
                     <span className="text-[10px] text-slate-400 block font-medium">Per traveler</span>
-                    <span className="text-2xl font-black text-slate-900 font-heading">
-                      {formatCurrency(pkg.pricePerPerson)}
-                    </span>
+                    {pkg.discountPercent > 0 ? (
+                      <div>
+                        <span className="text-2xl font-black text-emerald-700 font-heading">
+                          {formatCurrency(pkg.effectivePrice || pkg.discountPrice)}
+                        </span>
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <span className="text-slate-400 line-through">
+                            {formatCurrency(pkg.pricePerPerson)}
+                          </span>
+                          <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1 rounded">
+                            Save {formatCurrency(pkg.pricePerPerson - (pkg.effectivePrice || pkg.discountPrice))}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-2xl font-black text-slate-900 font-heading">
+                        {formatCurrency(pkg.pricePerPerson)}
+                      </span>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <Link to={`/packages/${pkg.id}`}>

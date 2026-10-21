@@ -54,7 +54,13 @@ export const createCheckoutSession = async (req, res, next) => {
       return sendError(res, 'This tour package is not currently available for booking', 400);
     }
 
-    const pricePerPerson = Number(pkgData.pricePerPerson);
+    const originalPricePerPerson = Number(pkgData.pricePerPerson);
+    const discountPercent = Number(pkgData.discountPercent) || 0;
+    const effectivePricePerPerson = (discountPercent > 0 && discountPercent < 100)
+      ? (Number(pkgData.discountPrice) || Math.round(originalPricePerPerson * (1 - discountPercent / 100)))
+      : (Number(pkgData.effectivePrice) || originalPricePerPerson);
+    const discountAppliedPerPerson = Math.max(0, originalPricePerPerson - effectivePricePerPerson);
+    const pricePerPerson = effectivePricePerPerson;
     const totalPrice = pricePerPerson * travelerCount;
     const bookingReference = generateBookingReference();
     const now = new Date().toISOString();
@@ -132,7 +138,10 @@ export const createCheckoutSession = async (req, res, next) => {
         customerPhone: customerPhone || '',
         numberOfTravelers: travelerCount,
         travelerManifest: Array.isArray(travelerManifest) ? travelerManifest : [],
-        pricePerPerson,
+        originalPricePerPerson,
+        discountPercent,
+        discountAppliedPerPerson,
+        pricePerPerson: effectivePricePerPerson,
         totalPrice,
         bookingStatus: 'Pending',
         paymentStatus: 'Unpaid',
@@ -152,7 +161,7 @@ export const createCheckoutSession = async (req, res, next) => {
 
     if (isStripeInitialized && stripe) {
       // Amount in smallest currency unit (centavos for PHP)
-      const unitAmountInCentavos = Math.round(pricePerPerson * 100);
+      const unitAmountInCentavos = Math.round(effectivePricePerPerson * 100);
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -164,7 +173,7 @@ export const createCheckoutSession = async (req, res, next) => {
               currency: DEFAULT_CURRENCY,
               product_data: {
                 name: `${pkgData.name} - Tour Departure`,
-                description: `Departure Date: ${pkgDoc.data().name} (${travelerCount} traveler(s)) | Ref: ${bookingReference}`,
+                description: `Departure (${travelerCount} traveler(s)) | Ref: ${bookingReference}${discountPercent > 0 ? ` | ${discountPercent}% Discount Applied` : ''}`,
                 images: (pkgData.imageUrls || []).slice(0, 1),
               },
               unit_amount: unitAmountInCentavos,
@@ -204,7 +213,7 @@ export const createCheckoutSession = async (req, res, next) => {
       action: 'CREATE_BOOKING_CHECKOUT',
       targetType: 'booking',
       targetId: newBookingId,
-      metadata: { bookingReference, totalPrice, travelerCount },
+      metadata: { bookingReference, totalPrice, travelerCount, discountPercent, pricePerPerson: effectivePricePerPerson },
     });
 
     return sendSuccess(
@@ -213,7 +222,10 @@ export const createCheckoutSession = async (req, res, next) => {
         bookingId: newBookingId,
         bookingReference,
         totalPrice,
-        pricePerPerson,
+        pricePerPerson: effectivePricePerPerson,
+        originalPricePerPerson,
+        discountPercent,
+        discountAppliedPerPerson,
         numberOfTravelers: travelerCount,
         checkoutUrl,
         stripeSessionId,

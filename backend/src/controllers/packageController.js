@@ -7,6 +7,41 @@ import { computeBookingDeadline } from './departureController.js';
 const COLLECTION = 'tourPackages';
 
 /**
+ * Authoritative pricing calculation helper for percentage discounts
+ */
+export const computePricing = (pricePerPerson, discountPercent) => {
+  const base = Number(pricePerPerson) || 0;
+  const pct = Math.max(0, Math.min(90, Math.round(Number(discountPercent) || 0)));
+  if (pct > 0) {
+    const discountPrice = Math.round(base * (1 - pct / 100));
+    return {
+      discountPercent: pct,
+      discountPrice,
+      effectivePrice: discountPrice,
+      hasDiscount: true,
+    };
+  }
+  return {
+    discountPercent: 0,
+    discountPrice: null,
+    effectivePrice: base,
+    hasDiscount: false,
+  };
+};
+
+export const enrichPackagePricing = (pkg) => {
+  if (!pkg) return pkg;
+  const pricing = computePricing(pkg.pricePerPerson, pkg.discountPercent);
+  return {
+    ...pkg,
+    discountPercent: pricing.discountPercent,
+    discountPrice: pricing.discountPrice,
+    effectivePrice: pricing.effectivePrice,
+    hasDiscount: pricing.hasDiscount,
+  };
+};
+
+/**
  * Get all tour packages with comprehensive filters, search, and sorting
  */
 export const getPackages = async (req, res, next) => {
@@ -21,6 +56,7 @@ export const getPackages = async (req, res, next) => {
       maxDuration,
       sort,
       featured,
+      discounted,
       operatorId,
       approvalStatus,
       myTours,
@@ -53,7 +89,7 @@ export const getPackages = async (req, res, next) => {
     }
 
     const snapshot = await query.limit(Number(limit)).get();
-    let packages = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    let packages = snapshot.docs.map((doc) => enrichPackagePricing({ id: doc.id, ...doc.data() }));
 
     // Rule: Public catalog only shows approved packages (or legacy packages without status)
     if (!isStaff) {
@@ -71,6 +107,11 @@ export const getPackages = async (req, res, next) => {
       packages = packages.filter((pkg) => (pkg.approvalStatus || 'approved') === approvalStatus);
     }
 
+    // Direct discount filter (Special Offers)
+    if (discounted === 'true') {
+      packages = packages.filter((pkg) => pkg.hasDiscount);
+    }
+
     // In-memory multi-field filtering
     if (search && search.trim()) {
       const term = search.trim().toLowerCase();
@@ -83,10 +124,10 @@ export const getPackages = async (req, res, next) => {
     }
 
     if (minPrice !== undefined) {
-      packages = packages.filter((pkg) => Number(pkg.pricePerPerson) >= Number(minPrice));
+      packages = packages.filter((pkg) => Number(pkg.effectivePrice) >= Number(minPrice));
     }
     if (maxPrice !== undefined) {
-      packages = packages.filter((pkg) => Number(pkg.pricePerPerson) <= Number(maxPrice));
+      packages = packages.filter((pkg) => Number(pkg.effectivePrice) <= Number(maxPrice));
     }
     if (minDuration !== undefined) {
       packages = packages.filter((pkg) => Number(pkg.durationDays) >= Number(minDuration));
@@ -160,9 +201,9 @@ export const getPackages = async (req, res, next) => {
 
     // Sorting
     if (sort === 'price_asc') {
-      packages.sort((a, b) => Number(a.pricePerPerson) - Number(b.pricePerPerson));
+      packages.sort((a, b) => Number(a.effectivePrice || a.pricePerPerson) - Number(b.effectivePrice || b.pricePerPerson));
     } else if (sort === 'price_desc') {
-      packages.sort((a, b) => Number(b.pricePerPerson) - Number(a.pricePerPerson));
+      packages.sort((a, b) => Number(b.effectivePrice || b.pricePerPerson) - Number(a.effectivePrice || a.pricePerPerson));
     } else if (sort === 'duration_asc') {
       packages.sort((a, b) => Number(a.durationDays) - Number(b.durationDays));
     } else if (sort === 'duration_desc') {
@@ -195,7 +236,7 @@ export const getFeaturedPackages = async (req, res, next) => {
       .limit(6)
       .get();
 
-    const packages = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    const packages = snapshot.docs.map((doc) => enrichPackagePricing({ id: doc.id, ...doc.data() }));
 
     for (const pkg of packages) {
       if (pkg.destinationId) {
@@ -222,7 +263,7 @@ export const getPackageById = async (req, res, next) => {
       return sendError(res, 'Tour package not found', 404);
     }
 
-    const pkg = { id: doc.id, ...doc.data() };
+    const pkg = enrichPackagePricing({ id: doc.id, ...doc.data() });
     const isStaff = req.user && ['coordinator', 'support', 'guide', 'admin'].includes(req.user.role);
 
     if (!pkg.isPublished && !isStaff) {
@@ -326,6 +367,7 @@ export const createPackage = async (req, res, next) => {
       description = '',
       category = 'Island Hopping',
       pricePerPerson,
+      discountPercent = 0,
       durationDays = 1,
       durationNights = 0,
       cancellationCutoffDays = 7,
@@ -361,6 +403,7 @@ export const createPackage = async (req, res, next) => {
     const approvalStatus = isOperator ? 'pending_approval' : (req.body.approvalStatus || 'approved');
     const isPublishedSafe = isOperator ? false : Boolean(isPublished);
 
+    const pricing = computePricing(pricePerPerson, discountPercent);
     const now = new Date().toISOString();
     const packageData = {
       name: name.trim(),
@@ -368,6 +411,10 @@ export const createPackage = async (req, res, next) => {
       description,
       category,
       pricePerPerson: Number(pricePerPerson),
+      discountPercent: pricing.discountPercent,
+      discountPrice: pricing.discountPrice,
+      effectivePrice: pricing.effectivePrice,
+      hasDiscount: pricing.hasDiscount,
       durationDays: Number(durationDays),
       durationNights: Number(durationNights),
       cancellationCutoffDays: Number(cancellationCutoffDays) || 7,
@@ -395,7 +442,14 @@ export const createPackage = async (req, res, next) => {
       action: 'CREATE_PACKAGE',
       targetType: 'package',
       targetId: docRef.id,
-      metadata: { name: created.name, price: created.pricePerPerson, operatorId, approvalStatus },
+      metadata: {
+        name: created.name,
+        price: created.pricePerPerson,
+        discountPercent: created.discountPercent,
+        effectivePrice: created.effectivePrice,
+        operatorId,
+        approvalStatus,
+      },
     });
 
     return sendSuccess(res, created, 'Tour package created successfully', 201);
@@ -431,8 +485,15 @@ export const updatePackage = async (req, res, next) => {
     delete updates.createdAt;
     updates.updatedAt = new Date().toISOString();
 
-    if (updates.pricePerPerson !== undefined) {
-      updates.pricePerPerson = Number(updates.pricePerPerson);
+    if (updates.pricePerPerson !== undefined || updates.discountPercent !== undefined) {
+      const basePrice = updates.pricePerPerson !== undefined ? updates.pricePerPerson : existingData.pricePerPerson;
+      const pct = updates.discountPercent !== undefined ? updates.discountPercent : (existingData.discountPercent || 0);
+      const pricing = computePricing(basePrice, pct);
+      updates.pricePerPerson = Number(basePrice);
+      updates.discountPercent = pricing.discountPercent;
+      updates.discountPrice = pricing.discountPrice;
+      updates.effectivePrice = pricing.effectivePrice;
+      updates.hasDiscount = pricing.hasDiscount;
     }
     if (updates.durationDays !== undefined) {
       updates.durationDays = Number(updates.durationDays);

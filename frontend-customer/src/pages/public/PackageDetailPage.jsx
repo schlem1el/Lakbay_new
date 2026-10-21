@@ -31,6 +31,7 @@ import {
   Compass,
   Sparkles,
   Star,
+  Percent,
 } from 'lucide-react';
 
 export const PackageDetailPage = () => {
@@ -150,7 +151,15 @@ export const PackageDetailPage = () => {
     ? pkg.imageUrls
     : ['https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=1200&q=80'];
 
-  const totalPrice = (pkg.pricePerPerson || 0) * numberOfTravelers;
+  const originalUnitPrice = Number(pkg.pricePerPerson) || 0;
+  const discountPercent = Number(pkg.discountPercent) || 0;
+  const unitPrice = (discountPercent > 0 && discountPercent < 100)
+    ? (Number(pkg.discountPrice) || Math.round(originalUnitPrice * (1 - discountPercent / 100)))
+    : (Number(pkg.effectivePrice) || originalUnitPrice);
+  const hasDiscount = discountPercent > 0;
+  const totalPrice = unitPrice * numberOfTravelers;
+  const originalTotalPrice = originalUnitPrice * numberOfTravelers;
+  const totalSavings = originalTotalPrice - totalPrice;
 
   const handleToggleCoTraveler = (ct) => {
     if (selectedCoTravelerIds.includes(ct.id)) {
@@ -286,12 +295,33 @@ export const PackageDetailPage = () => {
             </p>
           </div>
 
-          <div className="flex items-baseline gap-2 bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm shrink-0">
-            <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Price</span>
-            <span className="text-3xl font-black text-slate-900 font-heading">
-              {formatCurrency(pkg.pricePerPerson)}
-            </span>
-            <span className="text-xs text-slate-400">/ person (PHP)</span>
+          <div className="flex flex-col items-end bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm shrink-0">
+            {hasDiscount ? (
+              <div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-black text-emerald-700 font-heading">
+                    {formatCurrency(unitPrice)}
+                  </span>
+                  <span className="text-xs text-slate-400">/ person (PHP)</span>
+                </div>
+                <div className="flex items-center justify-end gap-2 mt-0.5">
+                  <span className="text-xs text-slate-400 line-through">
+                    {formatCurrency(originalUnitPrice)}
+                  </span>
+                  <Badge className="bg-rose-600 text-white font-extrabold text-[10px] px-1.5 py-0">
+                    {discountPercent}% OFF
+                  </Badge>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-baseline gap-2">
+                <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Price</span>
+                <span className="text-3xl font-black text-slate-900 font-heading">
+                  {formatCurrency(originalUnitPrice)}
+                </span>
+                <span className="text-xs text-slate-400">/ person (PHP)</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -804,12 +834,36 @@ export const PackageDetailPage = () => {
 
                 {/* 5. Pricing Breakdown */}
                 <div className="space-y-2 text-xs">
-                  <div className="flex justify-between text-slate-600">
-                    <span>
-                      {formatCurrency(pkg.pricePerPerson)} × {numberOfTravelers} traveler(s)
-                    </span>
-                    <span className="font-bold text-slate-900">{formatCurrency(totalPrice)}</span>
-                  </div>
+                  {hasDiscount ? (
+                    <>
+                      <div className="flex justify-between text-slate-500">
+                        <span>
+                          Standard Rate: {formatCurrency(originalUnitPrice)} × {numberOfTravelers}
+                        </span>
+                        <span className="line-through">{formatCurrency(originalTotalPrice)}</span>
+                      </div>
+                      <div className="flex justify-between text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-200/60">
+                        <span className="flex items-center gap-1">
+                          <Percent className="h-3.5 w-3.5" />
+                          Direct Discount ({discountPercent}% OFF)
+                        </span>
+                        <span>- {formatCurrency(totalSavings)}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-700 font-medium pt-0.5">
+                        <span>
+                          Discounted Rate: {formatCurrency(unitPrice)} × {numberOfTravelers}
+                        </span>
+                        <span className="font-bold text-slate-900">{formatCurrency(totalPrice)}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex justify-between text-slate-600">
+                      <span>
+                        {formatCurrency(originalUnitPrice)} × {numberOfTravelers} traveler(s)
+                      </span>
+                      <span className="font-bold text-slate-900">{formatCurrency(totalPrice)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-slate-500">
                     <span>Environmental & Permit Fees</span>
                     <span className="text-emerald-700 font-semibold">Included</span>
