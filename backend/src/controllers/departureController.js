@@ -5,6 +5,34 @@ import { logActivity } from '../services/auditService.js';
 const COLLECTION = 'departures';
 
 /**
+ * Helper to calculate the booking cutoff deadline timestamp
+ * Combines departureDate (YYYY-MM-DD) and departureTime (e.g. 07:00 AM) and subtracts deadlineHours
+ */
+export const computeBookingDeadline = (departureDate, departureTime = '07:00 AM', deadlineHours = 24) => {
+  try {
+    let hours = 7;
+    let minutes = 0;
+    const match = (departureTime || '').match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (match) {
+      hours = parseInt(match[1], 10);
+      minutes = parseInt(match[2], 10);
+      const ampm = match[3]?.toUpperCase();
+      if (ampm === 'PM' && hours < 12) hours += 12;
+      if (ampm === 'AM' && hours === 12) hours = 0;
+    }
+
+    const depDateTime = new Date(`${departureDate}T00:00:00`);
+    depDateTime.setHours(hours, minutes, 0, 0);
+
+    const deadlineTime = new Date(depDateTime.getTime() - Number(deadlineHours || 24) * 60 * 60 * 1000);
+    return deadlineTime.toISOString();
+  } catch (err) {
+    const d = new Date(`${departureDate}T00:00:00`);
+    return new Date(d.getTime() - 24 * 60 * 60 * 1000).toISOString();
+  }
+};
+
+/**
  * Get departures with optional package, guide, date, and status filters
  */
 export const getDepartures = async (req, res, next) => {
@@ -55,6 +83,7 @@ export const getDepartures = async (req, res, next) => {
     const pkgOperatorMap = new Map();
     const userMap = new Map();
 
+    const nowIso = new Date().toISOString();
     for (const dep of departures) {
       if (dep.packageId && !pkgMap.has(dep.packageId)) {
         const pDoc = await db.collection('tourPackages').doc(dep.packageId).get();
@@ -69,6 +98,13 @@ export const getDepartures = async (req, res, next) => {
         userMap.set(dep.assignedGuideId, uDoc.exists ? uDoc.data().fullName : 'Unassigned');
       }
       dep.assignedGuideName = dep.assignedGuideId ? userMap.get(dep.assignedGuideId) : 'Unassigned';
+
+      // Logistics & Deadline Enrichment
+      dep.departureTime = dep.departureTime || '07:00 AM';
+      dep.meetingPoint = dep.meetingPoint || 'Designated Harbor / Meeting Terminal';
+      dep.bookingDeadlineHours = dep.bookingDeadlineHours !== undefined ? Number(dep.bookingDeadlineHours) : 24;
+      dep.bookingDeadline = dep.bookingDeadline || computeBookingDeadline(dep.departureDate, dep.departureTime, dep.bookingDeadlineHours);
+      dep.isDeadlinePassed = Boolean(nowIso > dep.bookingDeadline);
     }
 
     // Rule D: Operator sandboxing - operators only see departures for their own packages
@@ -94,9 +130,15 @@ export const getDepartureById = async (req, res, next) => {
       return sendError(res, 'Departure not found', 404);
     }
 
+    const nowIso = new Date().toISOString();
     const departure = {
       id: doc.id,
       ...doc.data(),
+      departureTime: doc.data().departureTime || '07:00 AM',
+      meetingPoint: doc.data().meetingPoint || 'Designated Harbor / Meeting Terminal',
+      bookingDeadlineHours: doc.data().bookingDeadlineHours !== undefined ? Number(doc.data().bookingDeadlineHours) : 24,
+      bookingDeadline: doc.data().bookingDeadline || computeBookingDeadline(doc.data().departureDate, doc.data().departureTime || '07:00 AM', doc.data().bookingDeadlineHours || 24),
+      isDeadlinePassed: Boolean(nowIso > (doc.data().bookingDeadline || computeBookingDeadline(doc.data().departureDate, doc.data().departureTime || '07:00 AM', doc.data().bookingDeadlineHours || 24))),
       remainingSlots: Math.max(0, (doc.data().capacity || 0) - (doc.data().bookedCount || 0)),
     };
 
@@ -123,6 +165,9 @@ export const createDeparture = async (req, res, next) => {
       packageId,
       departureDate,
       returnDate,
+      departureTime = '07:00 AM',
+      meetingPoint = '',
+      bookingDeadlineHours = 24,
       capacity,
       assignedGuideId = null,
       status = 'open',
@@ -160,11 +205,18 @@ export const createDeparture = async (req, res, next) => {
       calculatedReturnDate = depDateObj.toISOString().split('T')[0];
     }
 
+    const deadlineHours = bookingDeadlineHours !== undefined ? Number(bookingDeadlineHours) : 24;
+    const computedDeadline = computeBookingDeadline(departureDate, departureTime, deadlineHours);
+
     const now = new Date().toISOString();
     const departureData = {
       packageId,
       departureDate,
       returnDate: calculatedReturnDate,
+      departureTime: (departureTime || '07:00 AM').trim(),
+      meetingPoint: (meetingPoint || '').trim(),
+      bookingDeadlineHours: deadlineHours,
+      bookingDeadline: computedDeadline,
       capacity: numCapacity,
       bookedCount: 0,
       assignedGuideId: assignedGuideId || null,
@@ -231,6 +283,14 @@ export const updateDeparture = async (req, res, next) => {
         );
       }
       updates.capacity = newCapacity;
+    }
+
+    // Recompute bookingDeadline if date, time, or deadline hours changed
+    if (updates.departureDate || updates.departureTime || updates.bookingDeadlineHours !== undefined) {
+      const targetDate = updates.departureDate || existing.departureDate;
+      const targetTime = updates.departureTime || existing.departureTime || '07:00 AM';
+      const targetHours = updates.bookingDeadlineHours !== undefined ? Number(updates.bookingDeadlineHours) : (existing.bookingDeadlineHours || 24);
+      updates.bookingDeadline = computeBookingDeadline(targetDate, targetTime, targetHours);
     }
 
     await docRef.update(updates);

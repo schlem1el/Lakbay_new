@@ -31,6 +31,8 @@ import {
   XCircle,
   AlertCircle,
   Clock,
+  MapPin,
+  ShieldAlert,
 } from 'lucide-react';
 
 export const DeparturesManagePage = () => {
@@ -56,6 +58,9 @@ export const DeparturesManagePage = () => {
     packageId: '',
     departureDate: '',
     returnDate: '',
+    departureTime: '07:00 AM',
+    meetingPoint: '',
+    bookingDeadlineHours: 24,
     capacity: 15,
     assignedGuideId: '',
     status: 'open',
@@ -104,6 +109,9 @@ export const DeparturesManagePage = () => {
       packageId: firstPkg?.id || '',
       departureDate: depStr,
       returnDate: retStr,
+      departureTime: '07:00 AM',
+      meetingPoint: firstPkg?.locationName ? `${firstPkg.locationName} Main Pier / Terminal` : '',
+      bookingDeadlineHours: 24,
       capacity: 15,
       assignedGuideId: '',
       status: 'open',
@@ -117,6 +125,9 @@ export const DeparturesManagePage = () => {
       packageId: dep.packageId || '',
       departureDate: dep.departureDate || '',
       returnDate: dep.returnDate || '',
+      departureTime: dep.departureTime || '07:00 AM',
+      meetingPoint: dep.meetingPoint || '',
+      bookingDeadlineHours: dep.bookingDeadlineHours !== undefined ? Number(dep.bookingDeadlineHours) : 24,
       capacity: dep.capacity || 15,
       assignedGuideId: dep.assignedGuideId || '',
       status: dep.status || 'open',
@@ -164,6 +175,9 @@ export const DeparturesManagePage = () => {
         packageId: formData.packageId,
         departureDate: formData.departureDate,
         returnDate: formData.returnDate,
+        departureTime: formData.departureTime || '07:00 AM',
+        meetingPoint: formData.meetingPoint || '',
+        bookingDeadlineHours: Number(formData.bookingDeadlineHours) || 24,
         capacity: Number(formData.capacity),
         assignedGuideId: formData.assignedGuideId || null,
         status: formData.status,
@@ -283,7 +297,8 @@ export const DeparturesManagePage = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Tour Package</TableHead>
-              <TableHead>Schedule Dates</TableHead>
+              <TableHead>Schedule & Assembly</TableHead>
+              <TableHead>Meeting Point & Cutoff</TableHead>
               <TableHead>Capacity & Bookings</TableHead>
               <TableHead>Assigned Guide</TableHead>
               <TableHead>Status</TableHead>
@@ -293,14 +308,14 @@ export const DeparturesManagePage = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-40 text-center text-slate-400">
+                <TableCell colSpan={7} className="h-40 text-center text-slate-400">
                   <RefreshCw className="mx-auto h-6 w-6 animate-spin text-emerald-600 mb-2" />
                   Loading departure schedules...
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-40 text-center text-slate-400">
+                <TableCell colSpan={7} className="h-40 text-center text-slate-400">
                   No departure dates found matching filters.
                 </TableCell>
               </TableRow>
@@ -327,6 +342,27 @@ export const DeparturesManagePage = () => {
                       </div>
                       <div className="text-xs text-slate-400">
                         Until {dep.returnDate || dep.departureDate}
+                      </div>
+                      <div className="text-xs text-emerald-700 font-medium flex items-center gap-1 mt-0.5">
+                        <Clock className="h-3 w-3" />
+                        {dep.departureTime || '07:00 AM'}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      <div className="flex items-start gap-1 text-slate-800 text-xs font-medium max-w-[200px]" title={dep.meetingPoint}>
+                        <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0 mt-0.5" />
+                        <span className="truncate">{dep.meetingPoint || 'Designated Harbor / Terminal'}</span>
+                      </div>
+                      <div className="mt-1">
+                        {dep.isDeadlinePassed ? (
+                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5 font-normal">
+                            Cutoff Passed (Rule D)
+                          </Badge>
+                        ) : (
+                          <span className="text-[11px] text-slate-500">
+                            Cutoff: {dep.bookingDeadlineHours !== undefined ? dep.bookingDeadlineHours : 24}h prior
+                          </span>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -475,6 +511,56 @@ export const DeparturesManagePage = () => {
                   required
                 />
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="dep-time" className="text-xs font-semibold">
+                  Assembly / Departure Time *
+                </Label>
+                <Input
+                  id="dep-time"
+                  type="text"
+                  placeholder="e.g. 06:30 AM"
+                  value={formData.departureTime}
+                  onChange={(e) => setFormData({ ...formData, departureTime: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="dep-deadline" className="text-xs font-semibold">
+                  Booking Cutoff (Rule D) *
+                </Label>
+                <select
+                  id="dep-deadline"
+                  value={formData.bookingDeadlineHours}
+                  onChange={(e) => setFormData({ ...formData, bookingDeadlineHours: Number(e.target.value) })}
+                  className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value={12}>12 Hours Before</option>
+                  <option value={24}>24 Hours Before (Standard)</option>
+                  <option value={48}>48 Hours Before (2 Days)</option>
+                  <option value={72}>72 Hours Before (3 Days)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="dep-meeting" className="text-xs font-semibold">
+                Meeting Point & Landmark *
+              </Label>
+              <Input
+                id="dep-meeting"
+                type="text"
+                placeholder="e.g. El Nido Port Terminal Gate 2 or Hotel Lobby"
+                value={formData.meetingPoint}
+                onChange={(e) => setFormData({ ...formData, meetingPoint: e.target.value })}
+                required
+              />
+              <p className="text-[11px] text-slate-400">
+                Printed on confirmed customer booking vouchers and receipts.
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">

@@ -4,7 +4,7 @@ import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { formatDate } from '../../lib/utils';
-import { Bell, CheckCheck, Loader2, Info, CheckCircle2, AlertTriangle, AlertCircle } from 'lucide-react';
+import { Bell, CheckCheck, Loader2, Info, CheckCircle2, AlertTriangle, AlertCircle, Calendar, Clock } from 'lucide-react';
 
 export const NotificationsPage = () => {
   const [notifications, setNotifications] = useState([]);
@@ -41,6 +41,12 @@ export const NotificationsPage = () => {
     switch (type) {
       case 'booking_confirmed':
         return <CheckCircle2 className="h-5 w-5 text-emerald-600" />;
+      case 'booking_rescheduled':
+        return <Calendar className="h-5 w-5 text-emerald-600" />;
+      case 'reschedule_requested':
+        return <Clock className="h-5 w-5 text-amber-600" />;
+      case 'reschedule_rejected':
+        return <AlertTriangle className="h-5 w-5 text-amber-600" />;
       case 'booking_cancelled_refunded':
       case 'departure_cancelled':
         return <AlertTriangle className="h-5 w-5 text-red-600" />;

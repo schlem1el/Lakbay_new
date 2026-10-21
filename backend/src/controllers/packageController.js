@@ -2,6 +2,7 @@ import { db } from '../config/firebaseAdmin.js';
 import { sendSuccess, sendError } from '../utils/apiResponse.js';
 import { logActivity } from '../services/auditService.js';
 import { geocodeAddress } from '../services/locationService.js';
+import { computeBookingDeadline } from './departureController.js';
 
 const COLLECTION = 'tourPackages';
 
@@ -23,6 +24,9 @@ export const getPackages = async (req, res, next) => {
       operatorId,
       approvalStatus,
       myTours,
+      departureDateFrom,
+      departureDateTo,
+      departureDate,
       limit = 50,
     } = req.query;
 
@@ -102,13 +106,30 @@ export const getPackages = async (req, res, next) => {
 
       // Upcoming open departures count
       const today = new Date().toISOString().split('T')[0];
+      const nowIso = new Date().toISOString();
       const depSnap = await db
         .collection('departures')
         .where('packageId', '==', pkg.id)
         .get();
 
       const openDeps = depSnap.docs
-        .map((d) => d.data())
+        .map((d) => {
+          const data = d.data();
+          const bDeadline =
+            data.bookingDeadline ||
+            computeBookingDeadline(
+              data.departureDate,
+              data.departureTime || '07:00 AM',
+              data.bookingDeadlineHours !== undefined ? Number(data.bookingDeadlineHours) : 24
+            );
+          return {
+            id: d.id,
+            ...data,
+            bookingDeadline: bDeadline,
+            isDeadlinePassed: Boolean(nowIso > bDeadline),
+            remainingSlots: Math.max(0, (data.capacity || 0) - (data.bookedCount || 0)),
+          };
+        })
         .filter((d) => d.status === 'open' && (d.departureDate || '') >= today);
 
       openDeps.sort((a, b) => (a.departureDate || '').localeCompare(b.departureDate || ''));
@@ -116,9 +137,25 @@ export const getPackages = async (req, res, next) => {
       pkg.openDeparturesCount = openDeps.length;
       pkg.nextDepartureDate = openDeps[0]?.departureDate || null;
       pkg.availableSlots = openDeps.reduce(
-        (acc, d) => acc + Math.max(0, (d.capacity || 0) - (d.bookedCount || 0)),
+        (acc, d) => acc + d.remainingSlots,
         0
       );
+      pkg.openDepartures = openDeps;
+    }
+
+    // Departure Date filtering (Rule D & Checklist Sec A: Catalog Date Filter)
+    const targetDateFrom = departureDateFrom || departureDate;
+    const targetDateTo = departureDateTo || departureDate;
+
+    if (targetDateFrom || targetDateTo) {
+      packages = packages.filter((pkg) => {
+        return (pkg.openDepartures || []).some((dep) => {
+          if (dep.remainingSlots <= 0 || dep.isDeadlinePassed) return false;
+          if (targetDateFrom && (dep.departureDate || '') < targetDateFrom) return false;
+          if (targetDateTo && (dep.departureDate || '') > targetDateTo) return false;
+          return true;
+        });
+      });
     }
 
     // Sorting
@@ -200,6 +237,7 @@ export const getPackageById = async (req, res, next) => {
 
     // Fetch upcoming departures
     const today = new Date().toISOString().split('T')[0];
+    const nowIso = new Date().toISOString();
     let depQuery = db.collection('departures').where('packageId', '==', id);
 
     if (!isStaff) {
@@ -207,11 +245,26 @@ export const getPackageById = async (req, res, next) => {
     }
 
     const depSnapshot = await depQuery.get();
-    let deps = depSnapshot.docs.map((d) => ({
-      id: d.id,
-      ...d.data(),
-      remainingSlots: Math.max(0, (d.data().capacity || 0) - (d.data().bookedCount || 0)),
-    }));
+    let deps = depSnapshot.docs.map((d) => {
+      const data = d.data();
+      const bDeadline =
+        data.bookingDeadline ||
+        computeBookingDeadline(
+          data.departureDate,
+          data.departureTime || '07:00 AM',
+          data.bookingDeadlineHours !== undefined ? Number(data.bookingDeadlineHours) : 24
+        );
+      return {
+        id: d.id,
+        ...data,
+        departureTime: data.departureTime || '07:00 AM',
+        meetingPoint: data.meetingPoint || 'Designated Harbor / Meeting Terminal',
+        bookingDeadlineHours: data.bookingDeadlineHours !== undefined ? Number(data.bookingDeadlineHours) : 24,
+        bookingDeadline: bDeadline,
+        isDeadlinePassed: Boolean(nowIso > bDeadline),
+        remainingSlots: Math.max(0, (data.capacity || 0) - (data.bookedCount || 0)),
+      };
+    });
 
     if (!isStaff) {
       deps = deps.filter((d) => (d.departureDate || '') >= today);

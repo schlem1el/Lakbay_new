@@ -75,11 +75,15 @@ export const PackageDetailPage = () => {
         const data = res.data;
         setPackage(data);
 
-        // Pre-select first open departure if available
+        // Pre-select first open departure if available (Rule D: unexpired deadline)
         if (data.departures && data.departures.length > 0) {
-          const firstOpen = data.departures.find((d) => d.status === 'open' && d.remainingSlots > 0);
+          const firstOpen = data.departures.find(
+            (d) => d.status === 'open' && d.remainingSlots > 0 && !d.isDeadlinePassed
+          );
           if (firstOpen) {
             setSelectedDeparture(firstOpen);
+          } else {
+            setSelectedDeparture(data.departures[0]);
           }
         }
       } catch (err) {
@@ -167,6 +171,13 @@ export const PackageDetailPage = () => {
 
     if (!selectedDeparture) {
       setBookingError('Please select a departure schedule from the calendar or list.');
+      return;
+    }
+
+    if (selectedDeparture.isDeadlinePassed) {
+      setBookingError(
+        'Reservations for this departure date are now closed (Rule D booking deadline passed). Please select another departure date.'
+      );
       return;
     }
 
@@ -615,19 +626,60 @@ export const PackageDetailPage = () => {
                 {/* 1. Selected Departure Indicator */}
                 <div>
                   <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 block">
-                    Departure Schedule
+                    Departure Schedule & Logistics
                   </Label>
                   {selectedDeparture ? (
-                    <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 flex items-center justify-between">
-                      <div>
-                        <p className="text-xs font-bold text-slate-900">
-                          {formatDate(selectedDeparture.departureDate)} to {formatDate(selectedDeparture.returnDate)}
-                        </p>
-                        <p className="text-[11px] text-emerald-700 font-semibold">
-                          {selectedDeparture.remainingSlots} slot(s) available
-                        </p>
+                    <div className={`rounded-xl border p-3.5 space-y-2.5 ${
+                      selectedDeparture.isDeadlinePassed
+                        ? 'border-red-200 bg-red-50/50'
+                        : 'border-emerald-200 bg-emerald-50/50'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-bold text-slate-900">
+                            {formatDate(selectedDeparture.departureDate)} to {formatDate(selectedDeparture.returnDate)}
+                          </p>
+                          <p className={`text-[11px] font-semibold ${
+                            selectedDeparture.isDeadlinePassed ? 'text-red-700' : 'text-emerald-700'
+                          }`}>
+                            {selectedDeparture.remainingSlots} slot(s) available
+                          </p>
+                        </div>
+                        <Badge className={
+                          selectedDeparture.isDeadlinePassed
+                            ? 'bg-red-600 text-white text-[10px]'
+                            : 'bg-emerald-600 text-white text-[10px]'
+                        }>
+                          {selectedDeparture.isDeadlinePassed ? 'Deadline Passed' : 'Selected'}
+                        </Badge>
                       </div>
-                      <Badge className="bg-emerald-600 text-white text-[10px]">Selected</Badge>
+
+                      {/* Logistics: Assembly Time, Meeting Point & Cutoff */}
+                      <div className="pt-2 border-t border-slate-200/60 text-xs space-y-1.5 text-slate-700">
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                          <span>Assembly Time: <strong>{selectedDeparture.departureTime || '07:00 AM'}</strong></span>
+                        </div>
+                        <div className="flex items-start gap-1.5">
+                          <MapPin className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                          <span className="leading-snug">
+                            Meeting Point: <strong>{selectedDeparture.meetingPoint || 'Designated Harbor / Meeting Terminal'}</strong>
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          Cutoff: Closes {selectedDeparture.bookingDeadlineHours !== undefined ? selectedDeparture.bookingDeadlineHours : 24}h prior
+                        </div>
+                      </div>
+
+                      {/* Rule D Deadline Alert */}
+                      {selectedDeparture.isDeadlinePassed && (
+                        <div className="rounded-lg bg-red-100 border border-red-200 p-2 text-xs text-red-800 flex items-start gap-1.5 font-medium">
+                          <AlertCircle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
+                          <span>
+                            <strong>Reservations Closed (Rule D):</strong> The booking cutoff for this departure has passed. Please select an upcoming departure date on the calendar.
+                          </span>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
@@ -773,14 +825,16 @@ export const PackageDetailPage = () => {
                 {/* 6. Checkout CTA */}
                 <Button
                   type="submit"
-                  disabled={submittingBooking || !selectedDeparture}
-                  className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base rounded-xl shadow-lg shadow-emerald-600/30 cursor-pointer flex items-center justify-center gap-2"
+                  disabled={submittingBooking || !selectedDeparture || selectedDeparture.isDeadlinePassed || selectedDeparture.remainingSlots <= 0}
+                  className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base rounded-xl shadow-lg shadow-emerald-600/30 cursor-pointer flex items-center justify-center gap-2 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed"
                 >
                   {submittingBooking ? (
                     <>
                       <Loader2 className="h-5 w-5 animate-spin" />
                       Redirecting to Stripe...
                     </>
+                  ) : selectedDeparture?.isDeadlinePassed ? (
+                    'Booking Closed (Deadline Passed)'
                   ) : (
                     <>
                       <CreditCard className="h-5 w-5" />

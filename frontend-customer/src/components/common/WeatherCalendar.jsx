@@ -124,18 +124,21 @@ export const WeatherCalendar = ({
           const forecast = forecasts[dateKey];
           const isSelected = departure && departure.id === selectedDepartureId;
           const hasRemainingSlots = departure && departure.remainingSlots > 0;
+          const isDeadlinePassed = departure && Boolean(departure.isDeadlinePassed);
 
           return (
             <div
               key={dateKey}
               onClick={() => {
-                if (departure && hasRemainingSlots && onSelectDeparture) {
+                if (departure && onSelectDeparture) {
                   onSelectDeparture(departure);
                 }
               }}
               className={`min-h-[100px] rounded-xl p-2 flex flex-col justify-between transition-all border ${
                 isSelected
                   ? 'border-emerald-600 bg-emerald-50/80 shadow-md ring-2 ring-emerald-500/20'
+                  : isDeadlinePassed
+                  ? 'border-red-200 bg-red-50/20 hover:border-red-400 cursor-pointer'
                   : departure && hasRemainingSlots
                   ? 'border-emerald-200 bg-emerald-50/20 hover:border-emerald-400 hover:bg-emerald-50/50 cursor-pointer'
                   : 'border-slate-100 bg-white text-slate-400'
@@ -147,6 +150,8 @@ export const WeatherCalendar = ({
                   className={`text-xs font-bold ${
                     isSelected
                       ? 'text-emerald-700'
+                      : isDeadlinePassed
+                      ? 'text-red-700'
                       : departure
                       ? 'text-slate-900'
                       : 'text-slate-400'
@@ -170,7 +175,11 @@ export const WeatherCalendar = ({
               {/* Departure slot badge */}
               {departure ? (
                 <div className="mt-1">
-                  {hasRemainingSlots ? (
+                  {isDeadlinePassed ? (
+                    <span className="rounded bg-red-100 text-red-700 border border-red-200 px-1 py-0.5 text-[9px] font-bold text-center block">
+                      Cutoff Passed
+                    </span>
+                  ) : hasRemainingSlots ? (
                     <div className="flex flex-col gap-1">
                       <span className="rounded bg-emerald-600 px-1.5 py-0.5 text-[10px] font-bold text-white text-center leading-tight">
                         {departure.remainingSlots} slots
@@ -199,8 +208,12 @@ export const WeatherCalendar = ({
             <span>Open Departure</span>
           </div>
           <div className="flex items-center gap-1.5">
+            <span className="h-3 w-3 rounded-full bg-red-400" />
+            <span>Cutoff Passed</span>
+          </div>
+          <div className="flex items-center gap-1.5">
             <span className="h-3 w-3 rounded-full bg-slate-200" />
-            <span>Sold Out / Closed</span>
+            <span>Sold Out / Full</span>
           </div>
         </div>
         <p className="text-[11px] text-slate-400 italic">

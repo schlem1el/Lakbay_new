@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { bookingsApi } from '../../api/bookingsApi';
+import { packagesApi } from '../../api/packagesApi';
 import { reviewsApi } from '../../api/reviewsApi';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -45,6 +46,17 @@ export const BookingDetailPage = () => {
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewError, setReviewError] = useState('');
   const [reviewSuccess, setReviewSuccess] = useState('');
+
+  // Reschedule Modal & Request State
+  const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+  const [packageDepartures, setPackageDepartures] = useState([]);
+  const [loadingDepartures, setLoadingDepartures] = useState(false);
+  const [selectedTargetDepartureId, setSelectedTargetDepartureId] = useState('');
+  const [rescheduleReason, setRescheduleReason] = useState('');
+  const [submittingReschedule, setSubmittingReschedule] = useState(false);
+  const [rescheduleFeedback, setRescheduleFeedback] = useState('');
+  const [rescheduleError, setRescheduleError] = useState('');
+  const [cancellingReschedule, setCancellingReschedule] = useState(false);
 
   const fetchBooking = async () => {
     setLoading(true);
@@ -156,6 +168,81 @@ export const BookingDetailPage = () => {
     }
   };
 
+  const handleOpenRescheduleModal = async () => {
+    setSelectedTargetDepartureId('');
+    setRescheduleReason('');
+    setRescheduleError('');
+    setRescheduleFeedback('');
+    setRescheduleModalOpen(true);
+    setLoadingDepartures(true);
+
+    try {
+      const res = await packagesApi.getById(booking.packageId);
+      const allDeps = res.data?.departures || [];
+      // Filter to future, open departures with enough capacity and deadline unexpired
+      const valid = allDeps.filter(
+        (d) =>
+          d.id !== booking.departureId &&
+          d.status === 'open' &&
+          (d.remainingSlots || 0) >= booking.numberOfTravelers &&
+          !d.isDeadlinePassed
+      );
+      setPackageDepartures(valid);
+      if (valid.length > 0) {
+        setSelectedTargetDepartureId(valid[0].id);
+      }
+    } catch (err) {
+      console.error('Failed to load package departures:', err);
+      setRescheduleError('Failed to load alternative departure dates.');
+    } finally {
+      setLoadingDepartures(false);
+    }
+  };
+
+  const handleConfirmReschedule = async (e) => {
+    e.preventDefault();
+    if (!selectedTargetDepartureId) {
+      setRescheduleError('Please select a target departure date.');
+      return;
+    }
+
+    try {
+      setSubmittingReschedule(true);
+      setRescheduleError('');
+      setRescheduleFeedback('');
+
+      await bookingsApi.requestReschedule(id, {
+        targetDepartureId: selectedTargetDepartureId,
+        reason: rescheduleReason,
+      });
+
+      setRescheduleFeedback('Reschedule request submitted successfully! It is now pending review.');
+      await fetchBooking();
+      setTimeout(() => {
+        setRescheduleModalOpen(false);
+      }, 1500);
+    } catch (err) {
+      console.error('Reschedule request error:', err);
+      setRescheduleError(err.response?.data?.message || err.message || 'Failed to submit reschedule request.');
+    } finally {
+      setSubmittingReschedule(false);
+    }
+  };
+
+  const handleCancelRescheduleRequest = async () => {
+    if (!window.confirm('Are you sure you want to withdraw your pending reschedule request?')) return;
+    try {
+      setCancellingReschedule(true);
+      await bookingsApi.cancelReschedule(id);
+      await fetchBooking();
+    } catch (err) {
+      console.error('Withdraw reschedule error:', err);
+      alert(err.response?.data?.message || err.message || 'Failed to withdraw reschedule request.');
+    } finally {
+      setCancellingReschedule(false);
+    }
+  };
+
   return (
     <div className="space-y-8 max-w-5xl">
       {/* Top Breadcrumb & Status */}
@@ -193,6 +280,84 @@ export const BookingDetailPage = () => {
           </Badge>
         </div>
       </div>
+
+      {/* Reschedule Status Banners */}
+      {booking.rescheduleRequest?.status === 'pending' && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5 shadow-sm space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="rounded-xl bg-amber-100 p-2 text-amber-700 shrink-0">
+                <Clock className="h-5 w-5" />
+              </div>
+              <div>
+                <h4 className="font-bold text-slate-900 text-sm">
+                  Departure Reschedule Requested (Pending Operations Review)
+                </h4>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  You requested to move your tour departure from <strong>{formatDate(booking.departureDate)}</strong> to{' '}
+                  <strong className="text-amber-900">{formatDate(booking.rescheduleRequest.targetDepartureDate)}</strong>{' '}
+                  at {booking.rescheduleRequest.targetDepartureTime || '07:00 AM'}.
+                </p>
+              </div>
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCancelRescheduleRequest}
+              disabled={cancellingReschedule}
+              className="border-amber-300 text-amber-900 hover:bg-amber-100 text-xs shrink-0 font-medium"
+            >
+              {cancellingReschedule ? 'Withdrawing...' : 'Withdraw Request'}
+            </Button>
+          </div>
+
+          {booking.rescheduleRequest.reason && (
+            <div className="rounded-xl bg-white/80 border border-amber-200/60 p-3 text-xs text-slate-700">
+              <span className="font-semibold text-slate-900">Your Justification: </span>
+              <span>"{booking.rescheduleRequest.reason}"</span>
+            </div>
+          )}
+
+          <p className="text-[11px] text-amber-800 italic">
+            * Our tour operations team is actively verifying guide assignments and boat capacity. Your current departure schedule remains confirmed until approval.
+          </p>
+        </div>
+      )}
+
+      {booking.rescheduleRequest?.status === 'rejected' && (
+        <div className="rounded-2xl border border-red-200 bg-red-50/50 p-4 shadow-sm flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="text-xs text-slate-700 space-y-1">
+            <p className="font-bold text-red-900">
+              Departure Reschedule Request Declined
+            </p>
+            <p>
+              Your request to move this booking to {formatDate(booking.rescheduleRequest.targetDepartureDate)} could not be accommodated.
+              {booking.rescheduleRequest.reviewNotes && (
+                <span> Reason from operator: "<strong>{booking.rescheduleRequest.reviewNotes}</strong>"</span>
+              )}
+            </p>
+            <p className="text-slate-500 text-[11px]">
+              Your confirmed booking remains scheduled for <strong>{formatDate(booking.departureDate)}</strong>.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {booking.rescheduleRequest?.status === 'approved' && (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-sm flex items-start gap-3">
+          <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+          <div className="text-xs text-slate-700">
+            <p className="font-bold text-emerald-900">
+              Rescheduled Departure Confirmed
+            </p>
+            <p className="mt-0.5">
+              This booking was successfully rescheduled to depart on <strong>{formatDate(booking.departureDate)}</strong> at {booking.departureTime || '07:00 AM'}.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Main Booking Summary Card */}
       <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
@@ -261,6 +426,49 @@ export const BookingDetailPage = () => {
             <p className="font-medium text-slate-600">
               {formatDate(booking.createdAt)}
             </p>
+          </div>
+        </div>
+
+        {/* Departure Logistics & Meeting Point (Ticket Instructions) */}
+        <div className="py-6 border-b border-slate-100">
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4">
+            <h4 className="font-bold text-slate-900 text-sm font-heading mb-2.5 flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-emerald-600" />
+              Departure Meeting Point & Assembly Instructions
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div>
+                <span className="text-slate-500 font-semibold uppercase tracking-wider text-[11px] block">
+                  Assembly & Launch Time
+                </span>
+                <p className="font-bold text-slate-800 flex items-center gap-1.5 mt-0.5">
+                  <Clock className="h-3.5 w-3.5 text-emerald-600" />
+                  {booking.departureTime || '07:00 AM'}
+                </p>
+                <span className="text-[11px] text-slate-400 mt-0.5 block">
+                  Please arrive 15 minutes prior to departure for guide briefing and manifest check.
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-500 font-semibold uppercase tracking-wider text-[11px] block">
+                  Physical Meeting Landmark
+                </span>
+                <p className="font-bold text-slate-800 flex items-start gap-1.5 mt-0.5">
+                  <MapPin className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                  <span>{booking.meetingPoint || 'Designated Harbor / Tour Terminal'}</span>
+                </p>
+                {booking.meetingPoint && (
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(booking.meetingPoint + ', Philippines')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 underline inline-block mt-1"
+                  >
+                    Open in Google Maps →
+                  </a>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -375,15 +583,27 @@ export const BookingDetailPage = () => {
             )}
           </div>
 
-          {canCancel && (
-            <Button
-              variant="outline"
-              onClick={() => setCancelModalOpen(true)}
-              className="text-red-600 border-red-200 hover:bg-red-50 text-xs font-semibold"
-            >
-              Cancel This Booking
-            </Button>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {canCancel && booking.rescheduleRequest?.status !== 'pending' && (
+              <Button
+                onClick={handleOpenRescheduleModal}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm"
+              >
+                <Calendar className="h-3.5 w-3.5" />
+                Request Reschedule
+              </Button>
+            )}
+
+            {canCancel && (
+              <Button
+                variant="outline"
+                onClick={() => setCancelModalOpen(true)}
+                className="text-red-600 border-red-200 hover:bg-red-50 text-xs font-semibold"
+              >
+                Cancel This Booking
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -572,6 +792,155 @@ export const BookingDetailPage = () => {
                   <>
                     <Star className="h-3.5 w-3.5 fill-white" />
                     Submit Verified Review
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* RESCHEDULE REQUEST MODAL */}
+      <Dialog open={rescheduleModalOpen} onOpenChange={setRescheduleModalOpen}>
+        <DialogContent onClose={() => setRescheduleModalOpen(false)}>
+          <form onSubmit={handleConfirmReschedule}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-slate-900">
+                <Calendar className="h-5 w-5 text-emerald-600" />
+                Request Tour Departure Reschedule
+              </DialogTitle>
+              <DialogDescription>
+                Select an available future departure date for <strong>{booking.packageName}</strong>.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 my-4">
+              {/* Policy Cutoff Notice */}
+              <div
+                className={`rounded-xl p-3.5 border text-xs space-y-1 ${
+                  isEligibleForAutoRefund
+                    ? 'bg-emerald-50/70 border-emerald-200 text-emerald-800'
+                    : 'bg-amber-50/70 border-amber-200 text-amber-800'
+                }`}
+              >
+                <p className="font-bold flex items-center gap-1.5">
+                  <Clock className="h-4 w-4" />
+                  Departure Change Policy Notice
+                </p>
+                <p>
+                  Current departure is in <strong>{daysRemaining} day(s)</strong> (Policy cutoff:{' '}
+                  <strong>{cutoffDays} days</strong>).{' '}
+                  {isEligibleForAutoRefund
+                    ? 'Your request is well within the standard modification window.'
+                    : 'Your request is within the cutoff period and requires special operator exception review.'}
+                </p>
+              </div>
+
+              {rescheduleFeedback && (
+                <div className="rounded-xl bg-emerald-50 p-3 text-xs font-semibold text-emerald-800 border border-emerald-200 flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <span>{rescheduleFeedback}</span>
+                </div>
+              )}
+
+              {rescheduleError && (
+                <div className="rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-800 border border-red-200 flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
+                  <span>{rescheduleError}</span>
+                </div>
+              )}
+
+              {/* Target Departure Selection */}
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                  Select New Departure Schedule <span className="text-red-500">*</span>
+                </label>
+
+                {loadingDepartures ? (
+                  <div className="flex py-6 justify-center text-slate-400 text-xs">
+                    <Loader2 className="h-5 w-5 animate-spin text-emerald-600 mr-2" />
+                    Loading available departures...
+                  </div>
+                ) : packageDepartures.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-center text-xs text-slate-500">
+                    <Calendar className="h-6 w-6 text-slate-300 mx-auto mb-1.5" />
+                    No alternative open departures with at least {booking.numberOfTravelers} remaining seat(s) are currently scheduled for this package.
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    {packageDepartures.map((dep) => {
+                      const isSelected = dep.id === selectedTargetDepartureId;
+                      return (
+                        <div
+                          key={dep.id}
+                          onClick={() => setSelectedTargetDepartureId(dep.id)}
+                          className={`rounded-xl p-3 border cursor-pointer transition-all flex items-center justify-between text-xs ${
+                            isSelected
+                              ? 'border-emerald-600 bg-emerald-50/80 shadow-sm ring-2 ring-emerald-500/20'
+                              : 'border-slate-200 hover:border-slate-300 bg-white'
+                          }`}
+                        >
+                          <div>
+                            <p className="font-bold text-slate-900 flex items-center gap-1.5">
+                              <Calendar className="h-3.5 w-3.5 text-emerald-600" />
+                              {formatDate(dep.departureDate)} to {formatDate(dep.returnDate || dep.departureDate)}
+                            </p>
+                            <p className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1">
+                              <Clock className="h-3 w-3 text-slate-400" />
+                              Assembly: {dep.departureTime || '07:00 AM'} • {dep.meetingPoint || 'Port Terminal'}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded text-[10px]">
+                              {dep.remainingSlots} slot(s) open
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Justification / Reason */}
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Reason for Rescheduling (Optional)
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Flight delay, illness, or personal schedule conflict..."
+                  value={rescheduleReason}
+                  onChange={(e) => setRescheduleReason(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="border-t border-slate-100 pt-3">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setRescheduleModalOpen(false)}
+                disabled={submittingReschedule}
+                className="text-xs font-semibold"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={submittingReschedule || !selectedTargetDepartureId || packageDepartures.length === 0}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5"
+              >
+                {submittingReschedule ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Submitting Request...
+                  </>
+                ) : (
+                  <>
+                    <Calendar className="h-3.5 w-3.5" />
+                    Submit Reschedule Request
                   </>
                 )}
               </Button>

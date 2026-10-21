@@ -32,6 +32,7 @@ export const PackagesPage = () => {
   const [search, setSearch] = useState(initialSearch);
   const [selectedDestination, setSelectedDestination] = useState('');
   const [category, setCategory] = useState('');
+  const [departureDate, setDepartureDate] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [sort, setSort] = useState('featured');
@@ -50,6 +51,7 @@ export const PackagesPage = () => {
       if (search) params.search = search;
       if (selectedDestination) params.destinationId = selectedDestination;
       if (category) params.category = category;
+      if (departureDate) params.departureDate = departureDate;
       if (minPrice) params.minPrice = minPrice;
       if (maxPrice) params.maxPrice = maxPrice;
       if (sort) params.sort = sort;
@@ -65,7 +67,7 @@ export const PackagesPage = () => {
 
   useEffect(() => {
     fetchPackages();
-  }, [selectedDestination, category, sort]);
+  }, [selectedDestination, category, departureDate, sort]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -76,6 +78,7 @@ export const PackagesPage = () => {
     setSearch('');
     setSelectedDestination('');
     setCategory('');
+    setDepartureDate('');
     setMinPrice('');
     setMaxPrice('');
     setSort('featured');
@@ -103,9 +106,9 @@ export const PackagesPage = () => {
         {/* Filter Controls Toolbar */}
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm mb-10">
           <form onSubmit={handleSearchSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
               {/* Keyword Search */}
-              <div className="md:col-span-2 relative">
+              <div className="lg:col-span-2 relative">
                 <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
                 <Input
                   type="text"
@@ -130,6 +133,19 @@ export const PackagesPage = () => {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Departure Date Filter */}
+              <div className="relative">
+                <Calendar className="absolute left-3 top-3 h-4 w-4 text-slate-400 pointer-events-none" />
+                <Input
+                  type="date"
+                  value={departureDate}
+                  onChange={(e) => setDepartureDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="pl-9 text-xs h-10"
+                  title="Filter tours with available departures from this date"
+                />
               </div>
 
               {/* Sorting */}
@@ -170,6 +186,20 @@ export const PackagesPage = () => {
                     </button>
                   );
                 })}
+
+                {departureDate && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 text-xs font-semibold ml-1">
+                    <Calendar className="h-3 w-3" />
+                    From: {departureDate}
+                    <button
+                      type="button"
+                      onClick={() => setDepartureDate('')}
+                      className="ml-1 text-emerald-600 hover:text-emerald-950 font-bold"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
               </div>
 
               {/* Price Filter Inputs & Action */}

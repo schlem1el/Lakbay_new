@@ -31,6 +31,8 @@ export const adminApi = {
   getAllBookings: (params) => axiosClient.get('/bookings', { params }),
   getBookingById: (id) => axiosClient.get(`/bookings/${id}`),
   supportUpdateBooking: (id, data) => axiosClient.patch(`/bookings/${id}`, data),
+  approveReschedule: (id) => axiosClient.post(`/bookings/${id}/approve-reschedule`),
+  rejectReschedule: (id, reviewNotes) => axiosClient.post(`/bookings/${id}/reject-reschedule`, { reviewNotes }),
   processExceptionRefund: (id, exceptionReason) =>
     axiosClient.post(`/bookings/${id}/exception-refund`, { exceptionReason }),
 

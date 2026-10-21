@@ -33,6 +33,8 @@ import {
   FileText,
   Clock,
   ArrowRight,
+  CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
 
 export const BookingsManagePage = () => {
@@ -45,12 +47,14 @@ export const BookingsManagePage = () => {
   const [search, setSearch] = useState('');
   const [bookingStatusFilter, setBookingStatusFilter] = useState('');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('');
+  const [rescheduleOnlyFilter, setRescheduleOnlyFilter] = useState(false);
 
   // Modal State
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [bookingDetails, setBookingDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [moderatingReschedule, setModeratingReschedule] = useState(false);
 
   // Form in modal
   const [newInternalNote, setNewInternalNote] = useState('');
@@ -144,7 +148,51 @@ export const BookingsManagePage = () => {
     }
   };
 
+  const handleApproveReschedule = async (bookingId) => {
+    if (!window.confirm('Approve this reschedule request? Seats will be atomically reallocated between departures.')) {
+      return;
+    }
+    try {
+      setModeratingReschedule(true);
+      await adminApi.approveReschedule(bookingId);
+      alert('Reschedule request approved successfully! Schedule updated and customer notified.');
+      setSelectedBooking(null);
+      fetchBookings();
+    } catch (err) {
+      console.error('Approve reschedule error:', err);
+      alert(err.response?.data?.message || err.message || 'Failed to approve reschedule request.');
+    } finally {
+      setModeratingReschedule(false);
+    }
+  };
+
+  const handleRejectReschedule = async (bookingId) => {
+    const reason = window.prompt(
+      'Enter explanation for declining reschedule request (sent to traveler):',
+      'Unable to accommodate departure change due to guide or boat capacity constraints.'
+    );
+    if (reason === null) return;
+
+    try {
+      setModeratingReschedule(true);
+      await adminApi.rejectReschedule(bookingId, reason);
+      alert('Reschedule request rejected and customer notified.');
+      setSelectedBooking(null);
+      fetchBookings();
+    } catch (err) {
+      console.error('Reject reschedule error:', err);
+      alert(err.response?.data?.message || err.message || 'Failed to reject reschedule request.');
+    } finally {
+      setModeratingReschedule(false);
+    }
+  };
+
+  const pendingRescheduleCount = bookings.filter((b) => b.rescheduleRequest?.status === 'pending').length;
+
   const filtered = bookings.filter((b) => {
+    if (rescheduleOnlyFilter && b.rescheduleRequest?.status !== 'pending') {
+      return false;
+    }
     if (!search) return true;
     const term = search.toLowerCase();
     return (
@@ -216,6 +264,28 @@ export const BookingsManagePage = () => {
             <option value="Refunded">Refunded</option>
             <option value="Failed">Failed</option>
           </select>
+
+          <button
+            type="button"
+            onClick={() => setRescheduleOnlyFilter(!rescheduleOnlyFilter)}
+            className={`h-10 px-3.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-colors border ${
+              rescheduleOnlyFilter
+                ? 'bg-amber-500 text-white border-amber-600 shadow-sm'
+                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <Clock className="h-3.5 w-3.5" />
+            <span>Reschedule Requests</span>
+            {pendingRescheduleCount > 0 && (
+              <span
+                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  rescheduleOnlyFilter ? 'bg-amber-700 text-white' : 'bg-amber-100 text-amber-800'
+                }`}
+              >
+                {pendingRescheduleCount}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
@@ -322,6 +392,16 @@ export const BookingsManagePage = () => {
                           Review Req.
                         </Badge>
                       )}
+                      {b.rescheduleRequest?.status === 'pending' && (
+                        <Badge className="bg-amber-100 text-amber-900 border border-amber-300 text-[9px] px-1 py-0 font-bold">
+                          Reschedule Req.
+                        </Badge>
+                      )}
+                      {b.rescheduleRequest?.status === 'approved' && (
+                        <Badge variant="outline" className="text-[9px] px-1 py-0 text-slate-500">
+                          Rescheduled
+                        </Badge>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
@@ -381,6 +461,89 @@ export const BookingsManagePage = () => {
                   </div>
                   <div className="text-[11px] text-amber-700">
                     Window: Departed in {bookingDetails.cancellationDaysRemaining} day(s), cutoff was {bookingDetails.cancellationCutoffDays} days. Exception review required.
+                  </div>
+                </div>
+              )}
+
+              {/* Reschedule Request Review Card */}
+              {bookingDetails?.rescheduleRequest?.status === 'pending' && (
+                <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="font-bold flex items-center gap-1.5 text-amber-900 text-sm">
+                      <Calendar className="h-4 w-4 text-amber-700" />
+                      Customer Requested Departure Reschedule
+                    </div>
+                    <Badge className="bg-amber-200 text-amber-900 text-[10px] font-bold">
+                      Pending Action
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 bg-white/90 rounded-lg p-3 border border-amber-200/60">
+                    <div>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                        Current Departure
+                      </span>
+                      <p className="font-bold text-slate-800 mt-0.5">
+                        {bookingDetails.departureDate} ({bookingDetails.departureTime || '07:00 AM'})
+                      </p>
+                      <p className="text-[11px] text-slate-500 truncate" title={bookingDetails.meetingPoint}>
+                        {bookingDetails.meetingPoint || 'Port Terminal'}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 block">
+                        Requested Target Departure
+                      </span>
+                      <p className="font-bold text-emerald-900 mt-0.5">
+                        {bookingDetails.rescheduleRequest.targetDepartureDate} ({bookingDetails.rescheduleRequest.targetDepartureTime || '07:00 AM'})
+                      </p>
+                      <p className="text-[11px] text-emerald-700 truncate" title={bookingDetails.rescheduleRequest.targetMeetingPoint}>
+                        {bookingDetails.rescheduleRequest.targetMeetingPoint || 'Port Terminal'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {bookingDetails.rescheduleRequest.reason && (
+                    <div className="bg-white/90 rounded-lg p-2.5 border border-amber-200/60 text-slate-700">
+                      <span className="font-semibold text-slate-900">Traveler Reason: </span>
+                      <span>"{bookingDetails.rescheduleRequest.reason}"</span>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 text-[11px]">
+                    <span
+                      className={
+                        bookingDetails.rescheduleRequest.withinCutoff
+                          ? 'text-emerald-700 font-semibold'
+                          : 'text-amber-800 font-semibold'
+                      }
+                    >
+                      Policy Window:{' '}
+                      {bookingDetails.rescheduleRequest.withinCutoff
+                        ? 'Submitted within standard modification window'
+                        : `Submitted past ${bookingDetails.rescheduleRequest.cutoffDays || 7}-day cutoff (${bookingDetails.rescheduleRequest.daysRemaining} days left)`}
+                    </span>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={moderatingReschedule}
+                        onClick={() => handleRejectReschedule(selectedBooking.id)}
+                        className="bg-red-600 hover:bg-red-700 text-white text-xs h-8 px-3"
+                      >
+                        Reject Request
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={moderatingReschedule}
+                        onClick={() => handleApproveReschedule(selectedBooking.id)}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8 px-3 shadow-sm font-semibold"
+                      >
+                        {moderatingReschedule ? 'Processing...' : 'Approve Reschedule'}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}

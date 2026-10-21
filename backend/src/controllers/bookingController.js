@@ -3,6 +3,7 @@ import { stripe, isStripeInitialized, DEFAULT_CURRENCY } from '../config/stripe.
 import { sendSuccess, sendError } from '../utils/apiResponse.js';
 import { generateBookingReference } from '../utils/bookingReference.js';
 import { logActivity } from '../services/auditService.js';
+import { computeBookingDeadline } from './departureController.js';
 
 const BOOKINGS_COLLECTION = 'bookings';
 const DEPARTURES_COLLECTION = 'departures';
@@ -77,6 +78,25 @@ export const createCheckoutSession = async (req, res, next) => {
         throw new Error('Cannot book a departure date in the past');
       }
 
+      // Rule D: Booking Deadline - Prevent reservations after deadline
+      const deadline =
+        depData.bookingDeadline ||
+        computeBookingDeadline(
+          depData.departureDate,
+          depData.departureTime || '07:00 AM',
+          depData.bookingDeadlineHours || 24
+        );
+
+      if (now > deadline) {
+        const formattedCutoff = new Date(deadline).toLocaleString('en-PH', {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        });
+        throw new Error(
+          `Booking deadline passed: Reservations for this departure closed on ${formattedCutoff}. New bookings are no longer accepted (Rule D).`
+        );
+      }
+
       const currentBooked = depData.bookedCount || 0;
       const capacity = depData.capacity || 0;
       const remainingSlots = capacity - currentBooked;
@@ -105,6 +125,8 @@ export const createCheckoutSession = async (req, res, next) => {
         packageName: pkgData.name,
         departureDate: depData.departureDate,
         returnDate: depData.returnDate,
+        departureTime: depData.departureTime || '07:00 AM',
+        meetingPoint: depData.meetingPoint || 'Designated Harbor / Meeting Terminal',
         customerName: customerName || req.user.fullName || '',
         customerEmail: customerEmail || req.user.email || '',
         customerPhone: customerPhone || '',
@@ -480,6 +502,7 @@ export const getAllBookings = async (req, res, next) => {
       paymentStatus,
       packageId,
       departureDate,
+      rescheduleStatus,
       limit = 50,
     } = req.query;
 
@@ -527,6 +550,10 @@ export const getAllBookings = async (req, res, next) => {
 
     if (departureDate) {
       bookings = bookings.filter((b) => b.departureDate === departureDate);
+    }
+
+    if (rescheduleStatus) {
+      bookings = bookings.filter((b) => b.rescheduleRequest?.status === rescheduleStatus);
     }
 
     return sendSuccess(res, bookings, `Retrieved ${bookings.length} booking(s)`);
@@ -595,6 +622,18 @@ export const supportUpdateBooking = async (req, res, next) => {
           throw new Error(`Target departure is not open (status: ${newData.status})`);
         }
 
+        // Rule D: Booking Deadline Check on target departure
+        const targetDeadline =
+          newData.bookingDeadline ||
+          computeBookingDeadline(
+            newData.departureDate,
+            newData.departureTime || '07:00 AM',
+            newData.bookingDeadlineHours !== undefined ? Number(newData.bookingDeadlineHours) : 24
+          );
+        if (now > targetDeadline) {
+          throw new Error('Target departure booking cutoff has already passed (Rule D).');
+        }
+
         const remainingInNew = (newData.capacity || 0) - (newData.bookedCount || 0);
         if (currentBooking.numberOfTravelers > remainingInNew) {
           throw new Error(`Insufficient capacity on target departure (${remainingInNew} slot(s) available)`);
@@ -616,7 +655,9 @@ export const supportUpdateBooking = async (req, res, next) => {
 
         updates.departureId = rescheduleDepartureId;
         updates.departureDate = newData.departureDate;
-        updates.returnDate = newData.returnDate;
+        updates.departureTime = newData.departureTime || '07:00 AM';
+        updates.meetingPoint = newData.meetingPoint || 'Designated Harbor / Meeting Terminal';
+        updates.returnDate = newData.returnDate || newData.departureDate;
         updates.rescheduledAt = now;
 
         t.update(bookingRef, updates);
@@ -751,6 +792,401 @@ export const processExceptionRefund = async (req, res, next) => {
       { bookingId: id, status: 'Cancelled', paymentStatus: 'Refunded', refundResult },
       'Exception refund successfully processed.'
     );
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * 8. Customer: Request Booking Reschedule / Departure Modification
+ * (POST /api/bookings/:id/request-reschedule)
+ */
+export const requestReschedule = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { targetDepartureId, reason = '' } = req.body;
+    const userId = req.user.uid;
+    const isStaff = ['support', 'admin', 'coordinator', 'operator'].includes(req.user.role);
+
+    if (!targetDepartureId) {
+      return sendError(res, 'Target departure schedule is required', 400);
+    }
+
+    const bookingRef = db.collection(BOOKINGS_COLLECTION).doc(id);
+    const bookingDoc = await bookingRef.get();
+
+    if (!bookingDoc.exists) {
+      return sendError(res, 'Booking not found', 404);
+    }
+
+    const booking = bookingDoc.data();
+
+    // Verify ownership
+    if (!isStaff && booking.customerId !== userId) {
+      return sendError(res, 'Unauthorized: You can only reschedule your own bookings', 403);
+    }
+
+    if (['Cancelled', 'Completed', 'Rejected'].includes(booking.bookingStatus)) {
+      return sendError(res, `Cannot reschedule a booking that is ${booking.bookingStatus}`, 400);
+    }
+
+    // Departure date check: Cannot reschedule a tour that has already departed
+    const today = new Date().toISOString().split('T')[0];
+    if (booking.departureDate < today) {
+      return sendError(res, 'Cannot reschedule a departure that has already occurred', 400);
+    }
+
+    if (targetDepartureId === booking.departureId) {
+      return sendError(res, 'Target departure is identical to your current departure', 400);
+    }
+
+    // Validate target departure
+    const targetDepDoc = await db.collection(DEPARTURES_COLLECTION).doc(targetDepartureId).get();
+    if (!targetDepDoc.exists) {
+      return sendError(res, 'Target departure schedule not found', 404);
+    }
+
+    const targetDep = targetDepDoc.data();
+    if (targetDep.packageId !== booking.packageId) {
+      return sendError(res, 'Target departure does not belong to the same tour package', 400);
+    }
+
+    if (targetDep.status !== 'open') {
+      return sendError(res, `Target departure is not open for booking (status: ${targetDep.status})`, 400);
+    }
+
+    const remainingSlots = (targetDep.capacity || 0) - (targetDep.bookedCount || 0);
+    if (booking.numberOfTravelers > remainingSlots) {
+      return sendError(
+        res,
+        `Insufficient capacity: Target departure only has ${remainingSlots} seat(s) remaining for your party of ${booking.numberOfTravelers}.`,
+        400
+      );
+    }
+
+    // Rule D: Check target departure booking deadline
+    const nowIso = new Date().toISOString();
+    const targetDeadline =
+      targetDep.bookingDeadline ||
+      computeBookingDeadline(
+        targetDep.departureDate,
+        targetDep.departureTime || '07:00 AM',
+        targetDep.bookingDeadlineHours !== undefined ? Number(targetDep.bookingDeadlineHours) : 24
+      );
+
+    if (nowIso > targetDeadline) {
+      return sendError(
+        res,
+        `Target departure booking deadline has passed (closed on ${new Date(targetDeadline).toLocaleString('en-PH')}). Please pick a future departure date (Rule D).`,
+        400
+      );
+    }
+
+    // Policy Cutoff calculation for original departure
+    const todayObj = new Date();
+    todayObj.setHours(0, 0, 0, 0);
+    const depDateObj = new Date(booking.departureDate);
+    depDateObj.setHours(0, 0, 0, 0);
+
+    const diffMs = depDateObj.getTime() - todayObj.getTime();
+    const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    const cutoffDays = booking.cancellationCutoffDays || 7;
+    const withinCutoff = daysRemaining >= cutoffDays;
+
+    const rescheduleRequestData = {
+      status: 'pending',
+      targetDepartureId,
+      targetDepartureDate: targetDep.departureDate,
+      targetDepartureTime: targetDep.departureTime || '07:00 AM',
+      targetReturnDate: targetDep.returnDate || targetDep.departureDate,
+      targetMeetingPoint: targetDep.meetingPoint || 'Designated Harbor / Meeting Terminal',
+      reason: (reason || '').trim(),
+      withinCutoff,
+      daysRemaining,
+      cutoffDays,
+      requestedAt: nowIso,
+      reviewedBy: null,
+      reviewedAt: null,
+      reviewNotes: null,
+    };
+
+    await bookingRef.update({
+      rescheduleRequest: rescheduleRequestData,
+      updatedAt: nowIso,
+    });
+
+    // Notify traveler
+    await db.collection(NOTIFICATIONS_COLLECTION).add({
+      userId: booking.customerId,
+      title: 'Reschedule Request Submitted',
+      message: `Your request to reschedule booking ${booking.bookingReference} to ${targetDep.departureDate} has been received. Our team will review seat availability.`,
+      type: 'reschedule_requested',
+      isRead: false,
+      relatedBookingId: id,
+      createdAt: nowIso,
+    });
+
+    await logActivity({
+      actorUid: userId,
+      actorRole: req.user.role,
+      action: 'REQUEST_RESCHEDULE',
+      targetType: 'booking',
+      targetId: id,
+      metadata: { targetDepartureId, targetDepartureDate: targetDep.departureDate, withinCutoff, reason },
+    });
+
+    return sendSuccess(
+      res,
+      { bookingId: id, rescheduleRequest: rescheduleRequestData },
+      'Reschedule request submitted successfully. It is now under review by our operations team.'
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * 9. Customer: Cancel / Withdraw Pending Reschedule Request
+ * (POST /api/bookings/:id/cancel-reschedule)
+ */
+export const cancelRescheduleRequest = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.uid;
+    const isStaff = ['support', 'admin', 'coordinator', 'operator'].includes(req.user.role);
+
+    const bookingRef = db.collection(BOOKINGS_COLLECTION).doc(id);
+    const bookingDoc = await bookingRef.get();
+
+    if (!bookingDoc.exists) {
+      return sendError(res, 'Booking not found', 404);
+    }
+
+    const booking = bookingDoc.data();
+
+    if (!isStaff && booking.customerId !== userId) {
+      return sendError(res, 'Unauthorized', 403);
+    }
+
+    if (!booking.rescheduleRequest || booking.rescheduleRequest.status !== 'pending') {
+      return sendError(res, 'No active pending reschedule request found for this booking', 400);
+    }
+
+    const nowIso = new Date().toISOString();
+    await bookingRef.update({
+      'rescheduleRequest.status': 'cancelled',
+      'rescheduleRequest.cancelledAt': nowIso,
+      updatedAt: nowIso,
+    });
+
+    await logActivity({
+      actorUid: userId,
+      actorRole: req.user.role,
+      action: 'CANCEL_RESCHEDULE_REQUEST',
+      targetType: 'booking',
+      targetId: id,
+    });
+
+    return sendSuccess(res, { bookingId: id }, 'Reschedule request withdrawn successfully.');
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * 10. Staff / Operator: Approve Reschedule Request (Atomic Capacity Transfer)
+ * (POST /api/bookings/:id/approve-reschedule)
+ */
+export const approveRescheduleRequest = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const bookingRef = db.collection(BOOKINGS_COLLECTION).doc(id);
+    const bookingDoc = await bookingRef.get();
+
+    if (!bookingDoc.exists) {
+      return sendError(res, 'Booking not found', 404);
+    }
+
+    const booking = bookingDoc.data();
+
+    // Operator sandboxing
+    if (req.user.role === 'operator') {
+      const pkgDoc = await db.collection(PACKAGES_COLLECTION).doc(booking.packageId).get();
+      if (!pkgDoc.exists || pkgDoc.data().operatorId !== req.user.uid) {
+        return sendError(res, 'Forbidden: You can only approve reschedules for your own packages (Rule D)', 403);
+      }
+    }
+
+    if (!booking.rescheduleRequest || booking.rescheduleRequest.status !== 'pending') {
+      return sendError(res, 'No pending reschedule request found for this booking', 400);
+    }
+
+    const reqData = booking.rescheduleRequest;
+    const oldDepRef = db.collection(DEPARTURES_COLLECTION).doc(booking.departureId);
+    const newDepRef = db.collection(DEPARTURES_COLLECTION).doc(reqData.targetDepartureId);
+    const nowIso = new Date().toISOString();
+
+    await db.runTransaction(async (t) => {
+      const oldDoc = await t.get(oldDepRef);
+      const newDoc = await t.get(newDepRef);
+
+      if (!newDoc.exists) {
+        throw new Error('Target departure schedule does not exist');
+      }
+
+      const targetDep = newDoc.data();
+      if (targetDep.status !== 'open') {
+        throw new Error(`Target departure is not open for reservations (status: ${targetDep.status})`);
+      }
+
+      // Check Rule D booking deadline
+      const targetDeadline =
+        targetDep.bookingDeadline ||
+        computeBookingDeadline(
+          targetDep.departureDate,
+          targetDep.departureTime || '07:00 AM',
+          targetDep.bookingDeadlineHours !== undefined ? Number(targetDep.bookingDeadlineHours) : 24
+        );
+      if (nowIso > targetDeadline) {
+        throw new Error('Target departure booking cutoff has already passed (Rule D).');
+      }
+
+      const remainingInNew = (targetDep.capacity || 0) - (targetDep.bookedCount || 0);
+      if (booking.numberOfTravelers > remainingInNew) {
+        throw new Error(`Insufficient capacity on target departure (${remainingInNew} slot(s) remaining)`);
+      }
+
+      // Decrement bookedCount on old departure
+      if (oldDoc.exists) {
+        const oldBooked = oldDoc.data().bookedCount || 0;
+        t.update(oldDepRef, {
+          bookedCount: Math.max(0, oldBooked - booking.numberOfTravelers),
+          updatedAt: nowIso,
+        });
+      }
+
+      // Increment bookedCount on new departure
+      t.update(newDepRef, {
+        bookedCount: (targetDep.bookedCount || 0) + booking.numberOfTravelers,
+        updatedAt: nowIso,
+      });
+
+      // Update booking
+      t.update(bookingRef, {
+        departureId: reqData.targetDepartureId,
+        departureDate: reqData.targetDepartureDate,
+        departureTime: reqData.targetDepartureTime || '07:00 AM',
+        returnDate: reqData.targetReturnDate,
+        meetingPoint: reqData.targetMeetingPoint,
+        rescheduledAt: nowIso,
+        'rescheduleRequest.status': 'approved',
+        'rescheduleRequest.reviewedBy': req.user.uid,
+        'rescheduleRequest.reviewedAt': nowIso,
+        updatedAt: nowIso,
+      });
+    });
+
+    // Notify customer
+    await db.collection(NOTIFICATIONS_COLLECTION).add({
+      userId: booking.customerId,
+      title: 'Reschedule Request Approved!',
+      message: `Great news! Your booking (${booking.bookingReference}) has been approved and moved to departure date ${reqData.targetDepartureDate} at ${reqData.targetDepartureTime || '07:00 AM'}.`,
+      type: 'booking_rescheduled',
+      isRead: false,
+      relatedBookingId: id,
+      createdAt: nowIso,
+    });
+
+    await logActivity({
+      actorUid: req.user.uid,
+      actorRole: req.user.role,
+      action: 'APPROVE_RESCHEDULE',
+      targetType: 'booking',
+      targetId: id,
+      metadata: {
+        fromDepartureId: booking.departureId,
+        toDepartureId: reqData.targetDepartureId,
+        newDate: reqData.targetDepartureDate,
+      },
+    });
+
+    return sendSuccess(
+      res,
+      {
+        bookingId: id,
+        newDepartureDate: reqData.targetDepartureDate,
+        newDepartureTime: reqData.targetDepartureTime,
+        status: 'approved',
+      },
+      'Reschedule request approved successfully. Seats reallocated and schedule updated.'
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * 11. Staff / Operator: Reject Reschedule Request
+ * (POST /api/bookings/:id/reject-reschedule)
+ */
+export const rejectRescheduleRequest = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { reviewNotes = '' } = req.body;
+
+    const bookingRef = db.collection(BOOKINGS_COLLECTION).doc(id);
+    const bookingDoc = await bookingRef.get();
+
+    if (!bookingDoc.exists) {
+      return sendError(res, 'Booking not found', 404);
+    }
+
+    const booking = bookingDoc.data();
+
+    // Operator sandboxing
+    if (req.user.role === 'operator') {
+      const pkgDoc = await db.collection(PACKAGES_COLLECTION).doc(booking.packageId).get();
+      if (!pkgDoc.exists || pkgDoc.data().operatorId !== req.user.uid) {
+        return sendError(res, 'Forbidden: You can only moderate bookings for your own packages (Rule D)', 403);
+      }
+    }
+
+    if (!booking.rescheduleRequest || booking.rescheduleRequest.status !== 'pending') {
+      return sendError(res, 'No pending reschedule request found for this booking', 400);
+    }
+
+    const nowIso = new Date().toISOString();
+    const finalNotes = (reviewNotes || 'Unable to accommodate departure change due to scheduling or capacity limitations.').trim();
+
+    await bookingRef.update({
+      'rescheduleRequest.status': 'rejected',
+      'rescheduleRequest.reviewedBy': req.user.uid,
+      'rescheduleRequest.reviewedAt': nowIso,
+      'rescheduleRequest.reviewNotes': finalNotes,
+      updatedAt: nowIso,
+    });
+
+    // Notify customer
+    await db.collection(NOTIFICATIONS_COLLECTION).add({
+      userId: booking.customerId,
+      title: 'Reschedule Request Update',
+      message: `Your reschedule request for booking ${booking.bookingReference} could not be approved: ${finalNotes}. Your reservation remains on ${booking.departureDate}.`,
+      type: 'reschedule_rejected',
+      isRead: false,
+      relatedBookingId: id,
+      createdAt: nowIso,
+    });
+
+    await logActivity({
+      actorUid: req.user.uid,
+      actorRole: req.user.role,
+      action: 'REJECT_RESCHEDULE',
+      targetType: 'booking',
+      targetId: id,
+      metadata: { reviewNotes: finalNotes },
+    });
+
+    return sendSuccess(res, { bookingId: id, status: 'rejected', reviewNotes: finalNotes }, 'Reschedule request rejected.');
   } catch (error) {
     next(error);
   }
