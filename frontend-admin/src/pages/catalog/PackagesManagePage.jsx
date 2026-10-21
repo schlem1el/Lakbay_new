@@ -21,6 +21,7 @@ import {
   TableBody,
   TableCell,
 } from '../../components/ui/table';
+import { ImageUpload } from '../../components/common/ImageUpload';
 import {
   Plus,
   Search,
@@ -864,19 +865,13 @@ export const PackagesManagePage = () => {
             </div>
 
             {/* Images */}
-            <div className="space-y-1.5">
-              <Label htmlFor="pkg-images" className="text-xs font-semibold">
-                Image URLs (One per line)
-              </Label>
-              <textarea
-                id="pkg-images"
-                rows={2}
-                placeholder="https://images.unsplash.com/..."
-                value={formData.imageUrls}
-                onChange={(e) => setFormData({ ...formData, imageUrls: e.target.value })}
-                className="w-full rounded-md border border-slate-200 bg-white p-2.5 text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
+            <ImageUpload
+              folder="packages"
+              label="Tour Package Photos (Direct Upload)"
+              value={formData.imageUrls}
+              onChange={(urls) => setFormData({ ...formData, imageUrls: urls.join('\n') })}
+              maxFiles={10}
+            />
 
             {/* Visibility Toggles */}
             <div className="flex items-center gap-6 pt-2">

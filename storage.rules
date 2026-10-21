@@ -16,6 +16,7 @@ service firebase.storage {
         request.auth.token.role == 'coordinator' || 
         request.auth.token.role == 'support' || 
         request.auth.token.role == 'guide' || 
+        request.auth.token.role == 'operator' ||
         request.auth.token.role == 'admin'
       );
     }
