@@ -135,8 +135,8 @@ export const GuideManifestPage = () => {
   if (loading) {
     return (
       <div className="flex h-96 flex-col items-center justify-center gap-3">
-        <RefreshCw className="h-8 w-8 animate-spin text-emerald-600" />
-        <span className="text-sm font-medium text-slate-500">
+        <RefreshCw className="h-6 w-6 animate-spin text-slate-400" />
+        <span className="text-sm text-muted-foreground">
           Loading assigned tour departures...
         </span>
       </div>
@@ -148,46 +148,43 @@ export const GuideManifestPage = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            <Compass className="h-6 w-6 text-emerald-600" />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+            <Compass className="h-6 w-6 shrink-0 text-primary" />
             Tour Guide Operations & Manifest
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="mt-1 text-sm text-muted-foreground">
             Real-time passenger roster, digital roll-call check-ins, destination weather advisory, and trip completion.
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={fetchDepartures}
-          className="text-xs text-slate-600 flex items-center gap-1.5"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
+        <Button variant="outline" onClick={fetchDepartures} className="w-full shrink-0 sm:w-auto">
+          <RefreshCw className="h-4 w-4" />
           Refresh Assignments
         </Button>
       </div>
 
       {/* Error alert */}
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-center gap-2">
-          <AlertCircle className="h-4 w-4 shrink-0" />
+        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Departure Selector Pills */}
       {assignedDepartures.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-200 bg-white p-12 text-center text-slate-400">
-          <Compass className="mx-auto h-10 w-10 text-slate-300 mb-2" />
-          <h3 className="font-semibold text-slate-700">No Assigned Departures</h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+        <div className="rounded-lg border border-dashed border-border bg-card px-6 py-14 text-center">
+          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-slate-100">
+            <Compass className="h-5 w-5 text-slate-400" />
+          </div>
+          <h3 className="text-sm font-medium text-foreground">No Assigned Departures</h3>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
             You currently have no active tour departures assigned to your guide account.
           </p>
         </div>
       ) : (
-        <div className="flex gap-3 overflow-x-auto pb-2">
+        <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
           {assignedDepartures.map((dep) => {
             const isSelected = selectedDeparture?.id === dep.id;
             return (
@@ -195,30 +192,31 @@ export const GuideManifestPage = () => {
                 key={dep.id}
                 type="button"
                 onClick={() => selectDeparture(dep)}
-                className={`flex shrink-0 flex-col rounded-xl border p-3.5 text-left transition-all ${
+                aria-pressed={isSelected}
+                className={`flex w-64 shrink-0 snap-start flex-col rounded-lg border p-4 text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                   isSelected
-                    ? 'border-emerald-600 bg-emerald-50/60 shadow-sm ring-2 ring-emerald-500/20'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
+                    ? 'border-primary bg-card ring-1 ring-primary'
+                    : 'border-border bg-card hover:border-slate-300'
                 }`}
               >
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-xs font-bold text-slate-900">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="line-clamp-2 text-sm font-medium text-foreground">
                     {dep.package?.name || 'Tour Package'}
                   </span>
                   <Badge
                     variant={dep.status === 'completed' ? 'secondary' : 'success'}
-                    className="text-[10px] uppercase font-bold"
+                    className="shrink-0 capitalize"
                   >
                     {dep.status}
                   </Badge>
                 </div>
-                <div className="mt-2 flex items-center gap-3 text-xs text-slate-500">
-                  <span className="flex items-center gap-1 font-medium text-slate-700">
-                    <Calendar className="h-3 w-3 text-slate-400" />
+                <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1 tabular-nums text-slate-700">
+                    <Calendar className="h-3.5 w-3.5 text-slate-400" />
                     {dep.departureDate}
                   </span>
-                  <span>&bull;</span>
-                  <span>{dep.bookedCount || 0} Guests</span>
+                  <span className="text-slate-300">&bull;</span>
+                  <span className="tabular-nums">{dep.bookedCount || 0} Guests</span>
                 </div>
               </button>
             );
@@ -228,17 +226,17 @@ export const GuideManifestPage = () => {
 
       {/* Selected Departure Dossier & Live Weather */}
       {selectedDeparture && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
           {/* Main Departure Card */}
-          <Card className="border-slate-200 shadow-sm lg:col-span-2">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-lg font-bold text-slate-900">
+          <Card className="lg:col-span-2">
+            <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 space-y-1">
+                <CardTitle className="text-lg">
                   {selectedDeparture.package?.name}
                 </CardTitle>
-                <CardDescription className="text-xs text-slate-500 flex items-center gap-2 mt-1">
-                  <span>Schedule: {selectedDeparture.departureDate} to {selectedDeparture.returnDate}</span>
-                  <span>&bull;</span>
+                <CardDescription className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                  <span className="tabular-nums">Schedule: {selectedDeparture.departureDate} to {selectedDeparture.returnDate}</span>
+                  <span className="text-slate-300">&bull;</span>
                   <span>{selectedDeparture.package?.durationDays || 1} Days Tour</span>
                 </CardDescription>
               </div>
@@ -247,7 +245,7 @@ export const GuideManifestPage = () => {
                 <Button
                   onClick={handleCompleteDeparture}
                   disabled={completing}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm"
+                  className="w-full shrink-0 sm:w-auto"
                 >
                   <CheckCircle2 className="h-4 w-4" />
                   {completing ? 'Completing...' : 'Mark Tour as Completed'}
@@ -256,16 +254,16 @@ export const GuideManifestPage = () => {
             </CardHeader>
             <CardContent>
               {/* Headcount and Check-in Bar */}
-              <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-2">
-                <div className="flex items-center justify-between text-xs font-semibold">
+              <div className="space-y-2.5 rounded-md border border-border bg-slate-50 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
                   <span className="text-slate-600">Digital Roll-Call Progress</span>
-                  <span className="text-emerald-700">
+                  <span className="font-medium tabular-nums text-foreground">
                     {manifestData?.checkedInHeadcount || 0} of {manifestData?.totalHeadcount || 0} Checked In
                   </span>
                 </div>
-                <div className="h-3 w-full rounded-full bg-slate-200 overflow-hidden">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
                   <div
-                    className="h-full rounded-full bg-emerald-600 transition-all duration-300"
+                    className="h-full rounded-full bg-primary transition-all duration-300"
                     style={{
                       width: `${
                         manifestData?.totalHeadcount
@@ -282,34 +280,34 @@ export const GuideManifestPage = () => {
           </Card>
 
           {/* Destination Weather Preview Card */}
-          <Card className="border-slate-200 shadow-sm bg-gradient-to-br from-white to-blue-50/30">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <CloudSun className="h-4 w-4 text-blue-500" />
+          <Card>
+            <CardHeader className="pb-3 sm:pb-3">
+              <CardTitle className="flex items-center gap-2 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                <CloudSun className="h-4 w-4 text-sky-500" />
                 Live Destination Weather
               </CardTitle>
             </CardHeader>
             <CardContent>
               {weather ? (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-extrabold text-slate-900">
+                    <span className="text-3xl font-semibold tabular-nums tracking-tight text-foreground">
                       {Math.round(weather.temp || weather.temperature || 29)}°C
                     </span>
-                    <span className="text-xs font-semibold text-slate-600 capitalize">
+                    <span className="text-sm capitalize text-slate-600">
                       {weather.condition || weather.description || 'Clear Sky'}
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs text-slate-500 pt-1 border-t border-slate-100">
-                    <div>Humidity: <span className="font-semibold text-slate-700">{weather.humidity || 75}%</span></div>
-                    <div>Wind: <span className="font-semibold text-slate-700">{weather.windSpeed || 12} km/h</span></div>
+                  <div className="grid grid-cols-2 gap-2 border-t border-border pt-3 text-sm text-muted-foreground">
+                    <div>Humidity: <span className="font-medium tabular-nums text-foreground">{weather.humidity || 75}%</span></div>
+                    <div>Wind: <span className="font-medium tabular-nums text-foreground">{weather.windSpeed || 12} km/h</span></div>
                   </div>
-                  <p className="text-[11px] text-emerald-700 font-medium pt-1">
+                  <p className="text-xs text-emerald-700">
                     Ideal conditions for scheduled outdoor group activities.
                   </p>
                 </div>
               ) : (
-                <div className="py-4 text-xs text-slate-400 text-center">
+                <div className="py-4 text-center text-sm text-muted-foreground">
                   Live destination meteorological data unavailable.
                 </div>
               )}
@@ -320,21 +318,21 @@ export const GuideManifestPage = () => {
 
       {/* Passenger Manifest Table */}
       {selectedDeparture && (
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="border-b border-slate-200 bg-slate-50/50 px-6 py-3.5 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Users className="h-4 w-4 text-emerald-600" />
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <div className="flex flex-col gap-1 border-b border-border px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+              <Users className="h-4 w-4 text-slate-400" />
               Verified Passenger Manifest ({manifestData?.totalHeadcount || 0} Travelers)
             </h3>
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-muted-foreground">
               Click checkbox to toggle boarding check-in status
             </span>
           </div>
 
-          <Table>
+          <Table className="min-w-[860px]">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[60px] text-center">Check-In</TableHead>
+                <TableHead className="w-[88px] text-center">Check-In</TableHead>
                 <TableHead>Traveler Name</TableHead>
                 <TableHead>Party / Role</TableHead>
                 <TableHead>Booking Ref</TableHead>
@@ -345,14 +343,14 @@ export const GuideManifestPage = () => {
             <TableBody>
               {loadingManifest ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-40 text-center text-slate-400">
-                    <RefreshCw className="mx-auto h-6 w-6 animate-spin text-emerald-600 mb-2" />
+                  <TableCell colSpan={6} className="h-40 text-center text-muted-foreground">
+                    <RefreshCw className="mx-auto mb-2 h-5 w-5 animate-spin text-slate-400" />
                     Loading traveler roster...
                   </TableCell>
                 </TableRow>
               ) : !manifestData?.manifest || manifestData.manifest.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-32 text-center text-slate-400">
+                  <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
                     No confirmed passenger reservations for this departure yet.
                   </TableCell>
                 </TableRow>
@@ -360,50 +358,47 @@ export const GuideManifestPage = () => {
                 manifestData.manifest.map((item, idx) => (
                   <TableRow
                     key={`${item.bookingId}-${item.travelerIndex}`}
-                    className={item.isCheckedIn ? 'bg-emerald-50/30' : ''}
+                    className={item.isCheckedIn ? 'bg-emerald-50/40 hover:bg-emerald-50/60' : ''}
                   >
                     <TableCell className="text-center">
                       <button
                         type="button"
                         onClick={() => handleToggleCheckIn(item)}
-                        className="cursor-pointer text-slate-400 hover:text-emerald-600 focus:outline-none"
+                        aria-pressed={item.isCheckedIn}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
                       >
                         {item.isCheckedIn ? (
-                          <CheckSquare className="h-5 w-5 text-emerald-600 inline" />
+                          <CheckSquare className="h-5 w-5 text-primary" />
                         ) : (
-                          <Square className="h-5 w-5 inline" />
+                          <Square className="h-5 w-5" />
                         )}
                       </button>
                     </TableCell>
-                    <TableCell className="font-semibold text-slate-900 text-sm">
+                    <TableCell>
                       <div className="flex items-center gap-2">
-                        <span>{item.fullName}</span>
-                        {item.isCheckedIn && (
-                          <Badge variant="success" className="text-[9px] px-1.5 py-0">
-                            Boarded
-                          </Badge>
-                        )}
+                        <span className="font-medium text-foreground">{item.fullName}</span>
+                        {item.isCheckedIn && <Badge variant="success">Boarded</Badge>}
                       </div>
                     </TableCell>
-                    <TableCell className="text-xs text-slate-600">
+                    <TableCell className="text-slate-600">
                       {item.relationship}
                     </TableCell>
-                    <TableCell className="font-mono text-xs font-semibold text-slate-800">
+                    <TableCell className="whitespace-nowrap font-mono text-xs font-medium text-slate-800">
                       {item.bookingReference}
                     </TableCell>
-                    <TableCell className="text-xs text-slate-700">
-                      <div className="flex items-center gap-1.5">
-                        <Phone className="h-3 w-3 text-slate-400" />
+                    <TableCell>
+                      <div className="flex items-center gap-1.5 whitespace-nowrap tabular-nums text-slate-700">
+                        <Phone className="h-3.5 w-3.5 text-slate-400" />
                         <span>{item.contactPhone || 'N/A'}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-xs">
+                    <TableCell>
                       {item.dietaryOrMedicalNotes ? (
-                        <span className="font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                        <Badge variant="warning" className="whitespace-normal">
                           {item.dietaryOrMedicalNotes}
-                        </span>
+                        </Badge>
                       ) : (
-                        <span className="text-slate-400 italic">None noted</span>
+                        <span className="text-xs text-muted-foreground">None noted</span>
                       )}
                     </TableCell>
                   </TableRow>

@@ -17,8 +17,9 @@ export const Tabs = ({ defaultValue, value, onValueChange, className, children }
 
 export const TabsList = ({ className, children }) => (
   <div
+    role="tablist"
     className={cn(
-      'inline-flex h-11 items-center justify-center rounded-lg bg-slate-100 p-1 text-slate-500',
+      'inline-flex h-10 max-w-full items-center gap-1 overflow-x-auto rounded-full border border-border bg-card p-1 text-muted-foreground',
       className
     )}
   >
@@ -33,12 +34,12 @@ export const TabsTrigger = ({ value, className, children }) => {
   return (
     <button
       type="button"
+      role="tab"
+      aria-selected={isActive}
       onClick={() => changeTab(value)}
       className={cn(
-        'inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-white transition-all focus-visible:outline-none cursor-pointer',
-        isActive
-          ? 'bg-white text-slate-950 shadow-sm font-semibold'
-          : 'hover:text-slate-900',
+        'inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors cursor-pointer',
+        isActive ? 'bg-forest text-white' : 'hover:bg-sage-soft hover:text-forest',
         className
       )}
     >
@@ -52,7 +53,7 @@ export const TabsContent = ({ value, className, children }) => {
   if (current !== value) return null;
 
   return (
-    <div className={cn('mt-2 ring-offset-white focus-visible:outline-none', className)}>
+    <div role="tabpanel" className={cn('mt-4 focus-visible:outline-none', className)}>
       {children}
     </div>
   );

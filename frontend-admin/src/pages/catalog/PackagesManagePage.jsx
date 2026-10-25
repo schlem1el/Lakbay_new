@@ -41,6 +41,11 @@ import {
   Loader2,
 } from 'lucide-react';
 
+const fieldClass =
+  'w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground transition-colors placeholder:text-slate-400 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20';
+
+const checkboxClass = 'h-4 w-4 shrink-0 rounded border-slate-300 accent-primary cursor-pointer';
+
 export const PackagesManagePage = () => {
   const { role, user } = useStaffAuth();
   const [packages, setPackages] = useState([]);
@@ -361,44 +366,39 @@ export const PackagesManagePage = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-heading">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             {role === 'operator' ? 'My Tour Packages' : 'Tour Packages Catalog'}
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="mt-1 text-sm text-muted-foreground">
             {role === 'operator'
               ? 'Create, manage, and submit tour packages for compliance approval.'
               : 'Manage multi-day itineraries, pricing, inclusions, and publication visibility.'}
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button
-            onClick={openCreateModal}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex items-center gap-1.5 shadow-sm cursor-pointer"
-          >
-            <Plus className="h-4 w-4" />
-            Create Tour Package
-          </Button>
-        </div>
+        <Button onClick={openCreateModal} className="w-full shrink-0 sm:w-auto">
+          <Plus className="h-4 w-4" />
+          Create Tour Package
+        </Button>
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative w-full lg:max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             placeholder="Search package name or operator..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 text-sm"
+            className="pl-9"
           />
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:flex sm:items-center">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={`${fieldClass} h-10 sm:w-48`}
           >
             <option value="all">All Statuses</option>
             <option value="pending_approval">Pending Approval</option>
@@ -409,7 +409,7 @@ export const PackagesManagePage = () => {
           <select
             value={destFilter}
             onChange={(e) => setDestFilter(e.target.value)}
-            className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={`${fieldClass} h-10 sm:w-48`}
           >
             <option value="">All Destinations</option>
             {destinations.map((d) => (
@@ -420,10 +420,10 @@ export const PackagesManagePage = () => {
           </select>
 
           <Button
-            variant="ghost"
-            size="sm"
+            variant="outline"
+            size="icon"
             onClick={fetchData}
-            className="text-slate-500 hover:text-slate-800"
+            className="h-10 w-full text-slate-500 sm:w-10"
           >
             <RefreshCw className="h-4 w-4" />
           </Button>
@@ -432,18 +432,18 @@ export const PackagesManagePage = () => {
 
       {/* Error Alert */}
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-center gap-2">
-          <AlertCircle className="h-4 w-4 shrink-0" />
+        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Packages Table */}
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <Table>
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <Table className="min-w-[980px]">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[80px]">Preview</TableHead>
+              <TableHead className="w-[88px]">Preview</TableHead>
               <TableHead>Package Name</TableHead>
               <TableHead>Destination</TableHead>
               <TableHead>Duration</TableHead>
@@ -455,14 +455,14 @@ export const PackagesManagePage = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-40 text-center text-slate-400">
-                  <RefreshCw className="mx-auto h-6 w-6 animate-spin text-emerald-600 mb-2" />
+                <TableCell colSpan={7} className="h-40 text-center text-muted-foreground">
+                  <RefreshCw className="mx-auto mb-2 h-5 w-5 animate-spin text-slate-400" />
                   Loading tour packages...
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-40 text-center text-slate-400">
+                <TableCell colSpan={7} className="h-40 text-center text-muted-foreground">
                   No tour packages found matching your criteria.
                 </TableCell>
               </TableRow>
@@ -476,80 +476,76 @@ export const PackagesManagePage = () => {
                         <img
                           src={pkg.imageUrls[0]}
                           alt={pkg.name}
-                          className="h-10 w-12 rounded object-cover border border-slate-200"
+                          className="h-11 w-14 rounded-md border border-border object-cover"
                         />
                       ) : (
-                        <div className="flex h-10 w-12 items-center justify-center rounded bg-slate-100 text-slate-400">
+                        <div className="flex h-11 w-14 items-center justify-center rounded-md bg-slate-100 text-slate-400">
                           <Package className="h-4 w-4" />
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="font-semibold text-slate-900">
+                    <TableCell>
                       <div className="flex items-center gap-2">
-                        <span>{pkg.name}</span>
-                        {pkg.isFeatured && (
-                          <Badge variant="warning" className="text-[10px] px-1.5 py-0">
-                            Featured
-                          </Badge>
-                        )}
+                        <span className="font-medium text-foreground">{pkg.name}</span>
+                        {pkg.isFeatured && <Badge variant="warning">Featured</Badge>}
                       </div>
-                      <div className="text-xs text-slate-400 font-normal">
+                      <div className="mt-0.5 text-xs text-muted-foreground">
                         {pkg.category} &bull; {pkg.cancellationCutoffDays || 7}-day refund cutoff
                       </div>
                       {pkg.operatorName && pkg.operatorId !== 'platform' && (
-                        <div className="mt-1">
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
-                            <Building2 className="h-2.5 w-2.5 text-emerald-600" />
+                        <div className="mt-1.5">
+                          <span className="inline-flex items-center gap-1 rounded-md bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-700 ring-1 ring-inset ring-slate-200">
+                            <Building2 className="h-3 w-3 text-slate-400" />
                             {pkg.operatorName}
                           </span>
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm text-slate-600">
+                    <TableCell className="text-slate-700">
                       {dest?.name || pkg.destinationName || 'Destination'}
                     </TableCell>
-                    <TableCell className="text-sm text-slate-600 font-medium">
+                    <TableCell className="whitespace-nowrap tabular-nums text-slate-700">
                       {pkg.durationDays}D / {pkg.durationNights || 0}N
                     </TableCell>
-                    <TableCell className="text-slate-900">
+                    <TableCell className="whitespace-nowrap">
                       {pkg.discountPercent > 0 ? (
                         <div>
-                          <div className="font-bold text-emerald-700 flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 font-medium tabular-nums text-foreground">
                             {formatPHP(pkg.effectivePrice || pkg.discountPrice)}
-                            <span className="text-[10px] font-extrabold bg-rose-100 text-rose-700 px-1.5 py-0.2 rounded">
+                            <span className="rounded bg-red-50 px-1.5 py-0.5 text-[11px] font-semibold text-red-700 ring-1 ring-inset ring-red-600/20">
                               -{pkg.discountPercent}%
                             </span>
                           </div>
-                          <div className="text-xs text-slate-400 line-through">
+                          <div className="text-xs tabular-nums text-muted-foreground line-through">
                             {formatPHP(pkg.pricePerPerson)}
                           </div>
                         </div>
                       ) : (
-                        <span className="font-bold">{formatPHP(pkg.pricePerPerson)}</span>
+                        <span className="font-medium tabular-nums text-foreground">{formatPHP(pkg.pricePerPerson)}</span>
                       )}
                     </TableCell>
                     <TableCell>
                       {pkg.approvalStatus === 'pending_approval' ? (
-                        <Badge className="bg-amber-100 text-amber-800 border-none font-semibold text-[10px] flex items-center gap-1 w-fit">
-                          <Clock className="h-2.5 w-2.5" /> Pending Review
+                        <Badge variant="warning">
+                          <Clock className="h-3 w-3" /> Pending Review
                         </Badge>
                       ) : pkg.approvalStatus === 'rejected' ? (
-                        <Badge className="bg-red-100 text-red-800 border-none font-semibold text-[10px] flex items-center gap-1 w-fit" title={pkg.rejectionReason}>
-                          <XCircle className="h-2.5 w-2.5" /> Rejected
+                        <Badge variant="destructive" title={pkg.rejectionReason}>
+                          <XCircle className="h-3 w-3" /> Rejected
                         </Badge>
                       ) : (
                         <button
                           type="button"
                           onClick={() => handleTogglePublish(pkg)}
-                          className="cursor-pointer"
+                          className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
                           title="Click to toggle publish status"
                         >
                           {pkg.isPublished ? (
-                            <Badge variant="success" className="flex items-center gap-1">
+                            <Badge variant="success">
                               <Check className="h-3 w-3" /> Live
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="text-slate-400 border-slate-300">
+                            <Badge variant="outline" className="text-slate-500">
                               Draft (Hidden)
                             </Badge>
                           )}
@@ -565,13 +561,13 @@ export const PackagesManagePage = () => {
                               size="sm"
                               onClick={() => handleApprovePackage(pkg.id)}
                               disabled={approvingId === pkg.id}
-                              className="h-7 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white gap-1 cursor-pointer"
+                              className="h-8 px-2.5 text-xs"
                             >
                               {approvingId === pkg.id ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
                               ) : (
                                 <>
-                                  <Check className="h-3 w-3" /> Approve
+                                  <Check className="h-3.5 w-3.5" /> Approve
                                 </>
                               )}
                             </Button>
@@ -579,29 +575,29 @@ export const PackagesManagePage = () => {
                               size="sm"
                               variant="outline"
                               onClick={() => setRejectModalPkg(pkg)}
-                              className="h-7 text-[11px] text-red-600 border-red-200 hover:bg-red-50 gap-1 cursor-pointer"
+                              className="h-8 border-red-200 px-2.5 text-xs text-red-600 hover:bg-red-50 hover:text-red-700"
                             >
-                              <XCircle className="h-3 w-3" /> Reject
+                              <XCircle className="h-3.5 w-3.5" /> Reject
                             </Button>
                           </>
                         )}
 
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={() => openEditModal(pkg)}
-                          className="h-8 w-8 p-0 text-slate-600 hover:text-emerald-600 cursor-pointer"
+                          className="h-8 w-8 text-slate-500 hover:text-foreground"
                         >
                           <Edit2 className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={() => {
                             setPackageToDelete(pkg);
                             setDeleteError('');
                           }}
-                          className="h-8 w-8 p-0 text-slate-600 hover:text-red-600 cursor-pointer"
+                          className="h-8 w-8 text-slate-500 hover:bg-red-50 hover:text-red-600"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -617,7 +613,7 @@ export const PackagesManagePage = () => {
 
       {/* Create / Edit Modal Dialog */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>
               {editingPackage ? 'Edit Tour Package' : 'Create New Tour Package'}
@@ -628,20 +624,19 @@ export const PackagesManagePage = () => {
           </DialogHeader>
 
           {editingPackage && (
-            <div className="rounded-lg border border-blue-200 bg-blue-50/70 p-3 text-xs text-blue-800 flex items-start gap-2">
-              <Info className="h-4 w-4 shrink-0 mt-0.5" />
+            <div className="mb-5 flex items-start gap-2.5 rounded-md border border-sky-200 bg-sky-50 px-3 py-2.5 text-sm text-sky-800">
+              <Info className="mt-0.5 h-4 w-4 shrink-0" />
               <span>
-                <strong>Price Preservation:</strong> Changing the base price here only applies to future reservations. Existing bookings maintain their locked historical price.
+                <strong className="font-medium">Price Preservation:</strong> Changing the base price here only applies to future reservations. Existing bookings maintain their locked historical price.
               </span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4 py-2">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Basics */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="pkg-name" className="text-xs font-semibold">
-                  Package Title *
-                </Label>
+                <Label htmlFor="pkg-name">Package Title *</Label>
                 <Input
                   id="pkg-name"
                   placeholder="e.g. El Nido Ultimate Island Hopping Expedition"
@@ -652,14 +647,12 @@ export const PackagesManagePage = () => {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="pkg-dest" className="text-xs font-semibold">
-                  Destination *
-                </Label>
+                <Label htmlFor="pkg-dest">Destination *</Label>
                 <select
                   id="pkg-dest"
                   value={formData.destinationId}
                   onChange={(e) => setFormData({ ...formData, destinationId: e.target.value })}
-                  className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className={`${fieldClass} h-10`}
                   required
                 >
                   <option value="">Select Destination</option>
@@ -672,28 +665,26 @@ export const PackagesManagePage = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Pricing & duration */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="space-y-1.5">
-                <Label htmlFor="pkg-price" className="text-xs font-semibold">
-                  Price per Person (PHP) *
-                </Label>
+                <Label htmlFor="pkg-price">Price per Person (PHP) *</Label>
                 <Input
                   id="pkg-price"
                   type="number"
                   placeholder="12500"
                   value={formData.pricePerPerson}
                   onChange={(e) => setFormData({ ...formData, pricePerPerson: e.target.value })}
+                  className="tabular-nums"
                   required
                 />
               </div>
 
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="pkg-discount" className="text-xs font-semibold">
-                    Discount (%)
-                  </Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor="pkg-discount">Discount (%)</Label>
                   {Number(formData.discountPercent) > 0 && Number(formData.pricePerPerson) > 0 && (
-                    <span className="text-[10px] font-bold text-emerald-600">
+                    <span className="text-xs font-medium tabular-nums text-primary">
                       Pays {formatPHP(Math.round(Number(formData.pricePerPerson) * (1 - Number(formData.discountPercent) / 100)))}
                     </span>
                   )}
@@ -711,13 +702,12 @@ export const PackagesManagePage = () => {
                       discountPercent: Math.max(0, Math.min(90, parseInt(e.target.value) || 0)),
                     })
                   }
+                  className="tabular-nums"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="pkg-days" className="text-xs font-semibold">
-                  Duration (Days / Nights)
-                </Label>
+                <Label htmlFor="pkg-days">Duration (Days / Nights)</Label>
                 <div className="flex gap-2">
                   <Input
                     type="number"
@@ -727,6 +717,7 @@ export const PackagesManagePage = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, durationDays: parseInt(e.target.value) || 1 })
                     }
+                    className="tabular-nums"
                   />
                   <Input
                     type="number"
@@ -736,14 +727,13 @@ export const PackagesManagePage = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, durationNights: parseInt(e.target.value) || 0 })
                     }
+                    className="tabular-nums"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="pkg-cutoff" className="text-xs font-semibold">
-                  Refund Cutoff (Days)
-                </Label>
+                <Label htmlFor="pkg-cutoff">Refund Cutoff (Days)</Label>
                 <Input
                   id="pkg-cutoff"
                   type="number"
@@ -756,63 +746,58 @@ export const PackagesManagePage = () => {
                       cancellationCutoffDays: parseInt(e.target.value) || 7,
                     })
                   }
+                  className="tabular-nums"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="pkg-desc" className="text-xs font-semibold">
-                Overview & Description
-              </Label>
+              <Label htmlFor="pkg-desc">Overview & Description</Label>
               <textarea
                 id="pkg-desc"
-                rows={2}
+                rows={3}
                 placeholder="Comprehensive tour description..."
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full rounded-md border border-slate-200 bg-white p-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className={`${fieldClass} resize-y`}
               />
             </div>
 
             {/* Inclusions and Exclusions */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="pkg-inc" className="text-xs font-semibold">
-                  Inclusions (Comma-separated)
-                </Label>
+                <Label htmlFor="pkg-inc">Inclusions (Comma-separated)</Label>
                 <textarea
                   id="pkg-inc"
-                  rows={2}
+                  rows={3}
                   placeholder="Boat transfers, Environmental fees, Buffet lunch"
                   value={formData.inclusions}
                   onChange={(e) => setFormData({ ...formData, inclusions: e.target.value })}
-                  className="w-full rounded-md border border-slate-200 bg-white p-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className={`${fieldClass} resize-y`}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="pkg-exc" className="text-xs font-semibold">
-                  Exclusions (Comma-separated)
-                </Label>
+                <Label htmlFor="pkg-exc">Exclusions (Comma-separated)</Label>
                 <textarea
                   id="pkg-exc"
-                  rows={2}
+                  rows={3}
                   placeholder="Airfare, Personal expenses, Travel insurance"
                   value={formData.exclusions}
                   onChange={(e) => setFormData({ ...formData, exclusions: e.target.value })}
-                  className="w-full rounded-md border border-slate-200 bg-white p-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className={`${fieldClass} resize-y`}
                 />
               </div>
             </div>
 
             {/* Daily Itinerary Builder */}
-            <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-              <div className="flex items-center justify-between">
+            <div className="rounded-md border border-border">
+              <div className="flex flex-col gap-3 border-b border-border bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                  <h4 className="text-sm font-semibold text-foreground">
                     Day-by-Day Itinerary Builder
                   </h4>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="mt-0.5 text-xs text-muted-foreground">
                     Define scheduled activities and stops. Location names are auto-geocoded for the customer map.
                   </p>
                 </div>
@@ -821,34 +806,34 @@ export const PackagesManagePage = () => {
                   variant="outline"
                   size="sm"
                   onClick={addDay}
-                  className="h-7 text-xs bg-white text-emerald-700 border-emerald-300"
+                  className="w-full shrink-0 sm:w-auto"
                 >
-                  <Plus className="mr-1 h-3 w-3" /> Add Day
+                  <Plus className="h-3.5 w-3.5" /> Add Day
                 </Button>
               </div>
 
-              <div className="space-y-4">
+              <div className="divide-y divide-border">
                 {formData.itinerary.map((day, dayIdx) => (
-                  <div key={dayIdx} className="rounded-lg border border-slate-200 bg-white p-3 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 flex-1 max-w-md">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-800">
+                  <div key={dayIdx} className="space-y-3 p-4">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex flex-1 items-center gap-2.5 sm:max-w-md">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100 text-xs font-semibold tabular-nums text-slate-700">
                           {dayIdx + 1}
                         </span>
                         <Input
                           value={day.dayTitle}
                           onChange={(e) => updateDayTitle(dayIdx, e.target.value)}
                           placeholder={`Day ${dayIdx + 1} Title`}
-                          className="h-8 text-xs font-semibold"
+                          className="h-9 font-medium"
                         />
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 pl-9 sm:pl-0">
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
                           onClick={() => addActivity(dayIdx)}
-                          className="h-7 text-xs text-emerald-600 hover:text-emerald-700"
+                          className="h-8 px-2.5 text-xs text-primary hover:text-primary"
                         >
                           + Activity
                         </Button>
@@ -858,7 +843,7 @@ export const PackagesManagePage = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => removeDay(dayIdx)}
-                            className="h-7 text-xs text-red-500 hover:text-red-700"
+                            className="h-8 px-2.5 text-xs text-red-600 hover:bg-red-50 hover:text-red-700"
                           >
                             Remove Day
                           </Button>
@@ -867,16 +852,19 @@ export const PackagesManagePage = () => {
                     </div>
 
                     {/* Activities List */}
-                    <div className="space-y-2 pl-6 border-l-2 border-emerald-100">
+                    <div className="space-y-2 border-l border-border pl-4 sm:ml-3.5 sm:pl-5">
                       {day.activities.map((act, actIdx) => (
-                        <div key={actIdx} className="grid grid-cols-12 gap-2 items-center">
+                        <div
+                          key={actIdx}
+                          className="relative grid grid-cols-1 gap-2 rounded-md border border-border p-2 pr-10 sm:grid-cols-12 sm:items-center sm:border-0 sm:p-0 sm:pr-0"
+                        >
                           <Input
                             placeholder="09:00 AM"
                             value={act.timeSlot}
                             onChange={(e) =>
                               updateActivityField(dayIdx, actIdx, 'timeSlot', e.target.value)
                             }
-                            className="col-span-3 h-7 text-xs"
+                            className="h-9 tabular-nums sm:col-span-3"
                           />
                           <Input
                             placeholder="Activity name"
@@ -884,7 +872,7 @@ export const PackagesManagePage = () => {
                             onChange={(e) =>
                               updateActivityField(dayIdx, actIdx, 'activityName', e.target.value)
                             }
-                            className="col-span-4 h-7 text-xs"
+                            className="h-9 sm:col-span-4"
                           />
                           <Input
                             placeholder="Location / Spot"
@@ -892,12 +880,12 @@ export const PackagesManagePage = () => {
                             onChange={(e) =>
                               updateActivityField(dayIdx, actIdx, 'locationName', e.target.value)
                             }
-                            className="col-span-4 h-7 text-xs"
+                            className="h-9 sm:col-span-4"
                           />
                           <button
                             type="button"
                             onClick={() => removeActivity(dayIdx, actIdx)}
-                            className="col-span-1 text-slate-400 hover:text-red-500 text-center"
+                            className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-md text-lg leading-none text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 sm:static sm:col-span-1 sm:h-9 sm:w-full cursor-pointer"
                           >
                             &times;
                           </button>
@@ -919,37 +907,33 @@ export const PackagesManagePage = () => {
             />
 
             {/* Visibility Toggles */}
-            <div className="flex items-center gap-6 pt-2">
-              <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700">
+            <div className="flex flex-col gap-3 rounded-md border border-border p-4 sm:flex-row sm:items-center sm:gap-8">
+              <label className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.isPublished}
                   onChange={(e) => setFormData({ ...formData, isPublished: e.target.checked })}
-                  className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  className={checkboxClass}
                 />
                 Published (Visible on Customer Catalog)
               </label>
 
-              <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700">
+              <label className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.isFeatured}
                   onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
-                  className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  className={checkboxClass}
                 />
                 Featured on Homepage
               </label>
             </div>
 
-            <DialogFooter className="mt-4">
+            <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={saving}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
-              >
+              <Button type="submit" disabled={saving}>
                 {saving ? 'Saving...' : editingPackage ? 'Update Package' : 'Create Package'}
               </Button>
             </DialogFooter>
@@ -964,27 +948,28 @@ export const PackagesManagePage = () => {
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-red-600 flex items-center gap-2">
-              <Trash2 className="h-5 w-5" />
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-red-600" />
               Confirm Safe Deletion
             </DialogTitle>
             <DialogDescription>
               Are you sure you want to permanently delete{' '}
-              <strong>{packageToDelete?.name}</strong>?
+              <strong className="font-medium text-foreground">{packageToDelete?.name}</strong>?
             </DialogDescription>
           </DialogHeader>
 
           {deleteError && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
-              {deleteError}
+            <div className="mb-3 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{deleteError}</span>
             </div>
           )}
 
-          <p className="text-xs text-slate-500">
+          <p className="rounded-md bg-slate-50 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
             Note: Packages with existing departure schedules cannot be deleted to protect active itineraries and booking history.
           </p>
 
-          <DialogFooter className="mt-4">
+          <DialogFooter>
             <Button
               variant="outline"
               onClick={() => setPackageToDelete(null)}
@@ -992,11 +977,7 @@ export const PackagesManagePage = () => {
             >
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              onClick={confirmDelete}
-              disabled={isDeleting}
-            >
+            <Button variant="destructive" onClick={confirmDelete} disabled={isDeleting}>
               {isDeleting ? 'Deleting...' : 'Confirm Delete'}
             </Button>
           </DialogFooter>
@@ -1010,28 +991,28 @@ export const PackagesManagePage = () => {
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-red-600 flex items-center gap-2">
-              <XCircle className="h-5 w-5" />
+            <DialogTitle className="flex items-center gap-2">
+              <XCircle className="h-5 w-5 text-red-600" />
               Reject Tour Package
             </DialogTitle>
-            <DialogDescription className="text-xs text-slate-600 pt-1 leading-relaxed">
-              Provide feedback for <strong className="text-slate-900">{rejectModalPkg?.name}</strong> explaining why this package was not approved for publication.
+            <DialogDescription>
+              Provide feedback for <strong className="font-medium text-foreground">{rejectModalPkg?.name}</strong> explaining why this package was not approved for publication.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="my-2">
-            <label className="text-xs font-bold text-slate-700 block mb-1">
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-slate-700">
               Rejection Reason / Required Adjustments
             </label>
             <textarea
               rows={3}
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 p-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-red-500"
+              className={`${fieldClass} resize-y`}
             />
           </div>
 
-          <DialogFooter className="mt-4">
+          <DialogFooter>
             <Button
               variant="outline"
               onClick={() => setRejectModalPkg(null)}
@@ -1039,19 +1020,14 @@ export const PackagesManagePage = () => {
             >
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleRejectPackageConfirm}
-              disabled={isRejecting}
-              className="bg-red-600 hover:bg-red-700 text-white gap-1.5"
-            >
+            <Button variant="destructive" onClick={handleRejectPackageConfirm} disabled={isRejecting}>
               {isRejecting ? (
                 <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Rejecting...
+                  <Loader2 className="h-4 w-4 animate-spin" /> Rejecting...
                 </>
               ) : (
                 <>
-                  <XCircle className="h-3.5 w-3.5" /> Confirm Rejection
+                  <XCircle className="h-4 w-4" /> Confirm Rejection
                 </>
               )}
             </Button>

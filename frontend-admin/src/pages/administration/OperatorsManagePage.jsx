@@ -37,6 +37,14 @@ import {
   UserX,
 } from 'lucide-react';
 
+const fieldClass =
+  'w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground transition-colors placeholder:text-slate-400 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20';
+
+const tabClass = (isActive) =>
+  `inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors cursor-pointer ${
+    isActive ? 'bg-forest text-white' : 'text-slate-600 hover:bg-sage-soft hover:text-forest'
+  }`;
+
 export const OperatorsManagePage = () => {
   const [activeTab, setActiveTab] = useState('pending'); // 'pending' | 'operators' | 'all_apps'
   const [applications, setApplications] = useState([]);
@@ -175,12 +183,12 @@ export const OperatorsManagePage = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-heading">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             Tour Operator Management
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="mt-1 text-sm text-muted-foreground">
             Review agency accreditation applications, provision operator roles, and oversee accredited partners.
           </p>
         </div>
@@ -188,9 +196,8 @@ export const OperatorsManagePage = () => {
         <Button
           onClick={fetchData}
           variant="outline"
-          size="sm"
           disabled={loading}
-          className="gap-2 shrink-0 self-start sm:self-auto cursor-pointer"
+          className="w-full shrink-0 sm:w-auto"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -199,102 +206,97 @@ export const OperatorsManagePage = () => {
 
       {/* Notifications */}
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 text-sm rounded-xl border border-red-200">
-          <AlertTriangle className="h-4 w-4 shrink-0" />
+        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {successMsg && (
-        <div className="flex items-center gap-2 p-3 bg-emerald-50 text-emerald-800 text-sm rounded-xl border border-emerald-200">
-          <CheckCircle className="h-4 w-4 shrink-0" />
+        <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          <CheckCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-lg border border-border bg-card p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-amber-600">Pending Applications</span>
-            <Clock className="h-4 w-4 text-amber-500" />
+            <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Pending Applications</span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-amber-50 text-amber-600">
+              <Clock className="h-4 w-4" />
+            </span>
           </div>
-          <div className="text-2xl font-black text-amber-600 mt-2 font-heading">{pendingApps.length}</div>
-          <span className="text-[11px] text-slate-400">Awaiting compliance review</span>
+          <div className="mt-3 font-heading text-[2.5rem] font-normal leading-none tracking-normal tabular-nums text-foreground">
+            {pendingApps.length}
+          </div>
+          <span className="text-xs text-muted-foreground">Awaiting compliance review</span>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-lg border border-border bg-card p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-emerald-600">Active Operators</span>
-            <ShieldCheck className="h-4 w-4 text-emerald-500" />
+            <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Active Operators</span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-50 text-emerald-600">
+              <ShieldCheck className="h-4 w-4" />
+            </span>
           </div>
-          <div className="text-2xl font-black text-emerald-700 mt-2 font-heading">{activeOps.length}</div>
-          <span className="text-[11px] text-emerald-600/80">Authorized to publish tours</span>
+          <div className="mt-3 font-heading text-[2.5rem] font-normal leading-none tracking-normal tabular-nums text-foreground">
+            {activeOps.length}
+          </div>
+          <span className="text-xs text-muted-foreground">Authorized to publish tours</span>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-lg border border-border bg-card p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Total Partners</span>
-            <Building2 className="h-4 w-4 text-slate-400" />
+            <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Total Partners</span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-100 text-slate-500">
+              <Building2 className="h-4 w-4" />
+            </span>
           </div>
-          <div className="text-2xl font-black text-slate-900 mt-2 font-heading">{operators.length}</div>
-          <span className="text-[11px] text-slate-400">Registered agency partners</span>
+          <div className="mt-3 font-heading text-[2.5rem] font-normal leading-none tracking-normal tabular-nums text-foreground">
+            {operators.length}
+          </div>
+          <span className="text-xs text-muted-foreground">Registered agency partners</span>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-lg border border-border bg-card p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-red-600">Deactivated</span>
-            <XCircle className="h-4 w-4 text-red-500" />
+            <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Deactivated</span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-red-50 text-red-600">
+              <XCircle className="h-4 w-4" />
+            </span>
           </div>
-          <div className="text-2xl font-black text-red-700 mt-2 font-heading">{deactivatedOps.length}</div>
-          <span className="text-[11px] text-slate-400">Suspended privileges</span>
+          <div className="mt-3 font-heading text-[2.5rem] font-normal leading-none tracking-normal tabular-nums text-foreground">
+            {deactivatedOps.length}
+          </div>
+          <span className="text-xs text-muted-foreground">Suspended privileges</span>
         </div>
       </div>
 
       {/* Navigation Tabs and Search */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-          <button
-            onClick={() => setActiveTab('pending')}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer shrink-0 ${
-              activeTab === 'pending'
-                ? 'bg-slate-900 text-white'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex max-w-full items-center gap-1 overflow-x-auto rounded-full border border-border bg-sand-head p-1">
+          <button onClick={() => setActiveTab('pending')} className={tabClass(activeTab === 'pending')}>
             Pending Queue ({pendingApps.length})
           </button>
 
-          <button
-            onClick={() => setActiveTab('operators')}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer shrink-0 ${
-              activeTab === 'operators'
-                ? 'bg-slate-900 text-white'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
+          <button onClick={() => setActiveTab('operators')} className={tabClass(activeTab === 'operators')}>
             Accredited Operators ({operators.length})
           </button>
 
-          <button
-            onClick={() => setActiveTab('all_apps')}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer shrink-0 ${
-              activeTab === 'all_apps'
-                ? 'bg-slate-900 text-white'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
+          <button onClick={() => setActiveTab('all_apps')} className={tabClass(activeTab === 'all_apps')}>
             All Applications ({applications.length})
           </button>
         </div>
 
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+        <div className="relative w-full lg:w-80">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             placeholder="Search agency, DOT license, email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-9 text-xs"
+            className="pl-9"
           />
         </div>
       </div>
@@ -302,269 +304,249 @@ export const OperatorsManagePage = () => {
       {/* Content Section */}
       {activeTab === 'operators' ? (
         /* ACCREDITED OPERATORS TABLE */
-        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
           {loading ? (
             <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+              <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
             </div>
           ) : filteredOperators.length === 0 ? (
-            <div className="text-center py-16 px-4">
-              <Building2 className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-              <h3 className="text-sm font-bold text-slate-700">No accredited tour operators found</h3>
-              <p className="text-xs text-slate-400 mt-1">
+            <div className="px-4 py-16 text-center">
+              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-slate-100">
+                <Building2 className="h-5 w-5 text-slate-400" />
+              </div>
+              <h3 className="text-sm font-medium text-foreground">No accredited tour operators found</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
                 Approved applications will appear here as active agency accounts.
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-slate-50/70">
-                    <TableHead className="text-xs font-bold text-slate-700">Agency & Accreditation</TableHead>
-                    <TableHead className="text-xs font-bold text-slate-700">Representative</TableHead>
-                    <TableHead className="text-xs font-bold text-slate-700">Contact Details</TableHead>
-                    <TableHead className="text-xs font-bold text-slate-700 text-center">Managed Tours</TableHead>
-                    <TableHead className="text-xs font-bold text-slate-700">Account Status</TableHead>
-                    <TableHead className="text-xs font-bold text-slate-700 text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOperators.map((op) => {
-                    const isToggling = togglingUid === op.uid;
+            <Table className="min-w-[900px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Agency & Accreditation</TableHead>
+                  <TableHead>Representative</TableHead>
+                  <TableHead>Contact Details</TableHead>
+                  <TableHead className="text-center">Managed Tours</TableHead>
+                  <TableHead>Account Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredOperators.map((op) => {
+                  const isToggling = togglingUid === op.uid;
 
-                    return (
-                      <TableRow key={op.uid} className="hover:bg-slate-50/50">
-                        <TableCell className="text-xs">
-                          <div className="font-bold text-slate-900">{op.agencyName || op.fullName}</div>
-                          <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/60 inline-block mt-0.5">
-                            {op.accreditationNumber || 'Accredited Partner'}
-                          </span>
-                        </TableCell>
+                  return (
+                    <TableRow key={op.uid}>
+                      <TableCell>
+                        <div className="font-medium text-foreground">{op.agencyName || op.fullName}</div>
+                        <span className="mt-1 inline-block rounded bg-slate-50 px-1.5 py-0.5 font-mono text-[11px] text-slate-600 ring-1 ring-inset ring-slate-200">
+                          {op.accreditationNumber || 'Accredited Partner'}
+                        </span>
+                      </TableCell>
 
-                        <TableCell className="text-xs font-medium text-slate-800">
-                          {op.fullName || 'Official Representative'}
-                        </TableCell>
+                      <TableCell className="text-slate-700">
+                        {op.fullName || 'Official Representative'}
+                      </TableCell>
 
-                        <TableCell className="text-xs text-slate-600">
-                          <div className="flex items-center gap-1">
-                            <Mail className="h-3 w-3 text-slate-400" /> {op.email}
+                      <TableCell className="text-slate-600">
+                        <div className="flex items-center gap-1.5">
+                          <Mail className="h-3.5 w-3.5 text-slate-400" /> {op.email}
+                        </div>
+                        {op.phone && (
+                          <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Phone className="h-3.5 w-3.5 text-slate-400" /> {op.phone}
                           </div>
-                          {op.phone && (
-                            <div className="flex items-center gap-1 text-[11px] text-slate-500 mt-0.5">
-                              <Phone className="h-3 w-3 text-slate-400" /> {op.phone}
-                            </div>
-                          )}
-                        </TableCell>
+                        )}
+                      </TableCell>
 
-                        <TableCell className="text-xs text-center font-bold text-slate-800">
-                          {op.totalPackages || 0}
-                        </TableCell>
+                      <TableCell className="text-center font-medium tabular-nums text-foreground">
+                        {op.totalPackages || 0}
+                      </TableCell>
 
-                        <TableCell className="text-xs">
-                          {op.accountStatus === 'active' ? (
-                            <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-none font-semibold text-[10px]">
-                              Active
-                            </Badge>
+                      <TableCell>
+                        {op.accountStatus === 'active' ? (
+                          <Badge variant="success">Active</Badge>
+                        ) : (
+                          <Badge variant="destructive">Deactivated</Badge>
+                        )}
+                      </TableCell>
+
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={isToggling}
+                          onClick={() => handleToggleOperatorStatus(op)}
+                          className={`h-8 ${
+                            op.accountStatus === 'active'
+                              ? 'text-red-600 hover:bg-red-50 hover:text-red-700'
+                              : 'text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800'
+                          }`}
+                        >
+                          {isToggling ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : op.accountStatus === 'active' ? (
+                            <>
+                              <UserX className="h-3.5 w-3.5" /> Deactivate
+                            </>
                           ) : (
-                            <Badge className="bg-red-100 text-red-800 hover:bg-red-100 border-none font-semibold text-[10px]">
-                              Deactivated
-                            </Badge>
+                            <>
+                              <UserCheck className="h-3.5 w-3.5" /> Reactivate
+                            </>
                           )}
-                        </TableCell>
-
-                        <TableCell className="text-xs text-right">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={isToggling}
-                            onClick={() => handleToggleOperatorStatus(op)}
-                            className={`h-8 text-xs cursor-pointer ${
-                              op.accountStatus === 'active'
-                                ? 'text-red-600 hover:text-red-700 hover:bg-red-50'
-                                : 'text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50'
-                            }`}
-                          >
-                            {isToggling ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : op.accountStatus === 'active' ? (
-                              <>
-                                <UserX className="h-3.5 w-3.5 mr-1" /> Deactivate
-                              </>
-                            ) : (
-                              <>
-                                <UserCheck className="h-3.5 w-3.5 mr-1" /> Reactivate
-                              </>
-                            )}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           )}
         </div>
       ) : (
         /* APPLICATIONS QUEUE & HISTORY */
-        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
           {loading ? (
             <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+              <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
             </div>
           ) : filteredApps.length === 0 ? (
-            <div className="text-center py-16 px-4">
-              <Clock className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-              <h3 className="text-sm font-bold text-slate-700">No applications in this view</h3>
-              <p className="text-xs text-slate-400 mt-1">
+            <div className="px-4 py-16 text-center">
+              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-slate-100">
+                <Clock className="h-5 w-5 text-slate-400" />
+              </div>
+              <h3 className="text-sm font-medium text-foreground">No applications in this view</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
                 {activeTab === 'pending'
                   ? 'All pending operator applications have been reviewed.'
                   : 'No submitted applications found.'}
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-slate-50/70">
-                    <TableHead className="text-xs font-bold text-slate-700">Agency & Accreditation</TableHead>
-                    <TableHead className="text-xs font-bold text-slate-700">Applicant Details</TableHead>
-                    <TableHead className="text-xs font-bold text-slate-700 w-1/3">Services & Address</TableHead>
-                    <TableHead className="text-xs font-bold text-slate-700">Submitted</TableHead>
-                    <TableHead className="text-xs font-bold text-slate-700">Status</TableHead>
-                    <TableHead className="text-xs font-bold text-slate-700 text-right">Review Action</TableHead>
+            <Table className="min-w-[1000px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Agency & Accreditation</TableHead>
+                  <TableHead>Applicant Details</TableHead>
+                  <TableHead className="w-1/3">Services & Address</TableHead>
+                  <TableHead>Submitted</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Review Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredApps.map((app) => (
+                  <TableRow key={app.id}>
+                    <TableCell>
+                      <div className="font-medium text-foreground">{app.agencyName}</div>
+                      <span className="mt-1 inline-block rounded bg-slate-50 px-1.5 py-0.5 font-mono text-[11px] text-slate-600 ring-1 ring-inset ring-slate-200">
+                        {app.accreditationNumber}
+                      </span>
+                    </TableCell>
+
+                    <TableCell>
+                      <div className="font-medium text-slate-800">{app.contactPerson}</div>
+                      <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Mail className="h-3.5 w-3.5 text-slate-400" /> {app.email}
+                      </div>
+                      <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Phone className="h-3.5 w-3.5 text-slate-400" /> {app.phone}
+                      </div>
+                    </TableCell>
+
+                    <TableCell className="text-slate-600">
+                      {app.officeAddress && (
+                        <div className="mb-1 flex items-start gap-1.5 text-xs text-muted-foreground">
+                          <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+                          <span>{app.officeAddress}</span>
+                        </div>
+                      )}
+                      <p className="line-clamp-2 leading-relaxed text-slate-700">
+                        {app.description || 'No agency description provided.'}
+                      </p>
+                    </TableCell>
+
+                    <TableCell className="whitespace-nowrap tabular-nums text-muted-foreground">
+                      {app.createdAt ? new Date(app.createdAt).toLocaleDateString() : 'N/A'}
+                    </TableCell>
+
+                    <TableCell>
+                      {app.status === 'approved' ? (
+                        <Badge variant="success">Approved</Badge>
+                      ) : app.status === 'rejected' ? (
+                        <div>
+                          <Badge variant="destructive">Rejected</Badge>
+                          {app.reviewNotes && (
+                            <p className="mt-1 max-w-[160px] truncate text-xs text-red-600" title={app.reviewNotes}>
+                              {app.reviewNotes}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <Badge variant="warning">Pending</Badge>
+                      )}
+                    </TableCell>
+
+                    <TableCell className="text-right">
+                      {app.status === 'pending' ? (
+                        <div className="flex items-center justify-end gap-2">
+                          <Button size="sm" onClick={() => setAppToApprove(app)} className="h-8">
+                            <CheckCircle className="h-3.5 w-3.5" /> Approve
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setAppToReject(app)}
+                            className="h-8 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                          >
+                            <XCircle className="h-3.5 w-3.5" /> Reject
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Reviewed</span>
+                      )}
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredApps.map((app) => (
-                    <TableRow key={app.id} className="hover:bg-slate-50/50">
-                      <TableCell className="text-xs">
-                        <div className="font-bold text-slate-900">{app.agencyName}</div>
-                        <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/60 inline-block mt-0.5">
-                          {app.accreditationNumber}
-                        </span>
-                      </TableCell>
-
-                      <TableCell className="text-xs">
-                        <div className="font-semibold text-slate-800">{app.contactPerson}</div>
-                        <div className="flex items-center gap-1 text-[11px] text-slate-500 mt-0.5">
-                          <Mail className="h-3 w-3 text-slate-400" /> {app.email}
-                        </div>
-                        <div className="flex items-center gap-1 text-[11px] text-slate-500">
-                          <Phone className="h-3 w-3 text-slate-400" /> {app.phone}
-                        </div>
-                      </TableCell>
-
-                      <TableCell className="text-xs text-slate-600">
-                        {app.officeAddress && (
-                          <div className="flex items-center gap-1 text-[11px] text-slate-500 mb-1">
-                            <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
-                            <span>{app.officeAddress}</span>
-                          </div>
-                        )}
-                        <p className="line-clamp-2 leading-relaxed text-slate-700">
-                          {app.description || 'No agency description provided.'}
-                        </p>
-                      </TableCell>
-
-                      <TableCell className="text-xs text-slate-500">
-                        {app.createdAt ? new Date(app.createdAt).toLocaleDateString() : 'N/A'}
-                      </TableCell>
-
-                      <TableCell className="text-xs">
-                        {app.status === 'approved' ? (
-                          <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-none font-semibold text-[10px]">
-                            Approved
-                          </Badge>
-                        ) : app.status === 'rejected' ? (
-                          <div>
-                            <Badge className="bg-red-100 text-red-800 hover:bg-red-100 border-none font-semibold text-[10px]">
-                              Rejected
-                            </Badge>
-                            {app.reviewNotes && (
-                              <p className="text-[10px] text-red-600 mt-0.5 max-w-[150px] truncate" title={app.reviewNotes}>
-                                {app.reviewNotes}
-                              </p>
-                            )}
-                          </div>
-                        ) : (
-                          <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-none font-semibold text-[10px]">
-                            Pending
-                          </Badge>
-                        )}
-                      </TableCell>
-
-                      <TableCell className="text-xs text-right">
-                        {app.status === 'pending' ? (
-                          <div className="flex items-center justify-end gap-1.5">
-                            <Button
-                              size="sm"
-                              onClick={() => setAppToApprove(app)}
-                              className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs cursor-pointer gap-1"
-                            >
-                              <CheckCircle className="h-3.5 w-3.5" /> Approve
-                            </Button>
-
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setAppToReject(app)}
-                              className="h-8 text-red-600 hover:bg-red-50 border-red-200 font-semibold text-xs cursor-pointer gap-1"
-                            >
-                              <XCircle className="h-3.5 w-3.5" /> Reject
-                            </Button>
-                          </div>
-                        ) : (
-                          <span className="text-[11px] text-slate-400">Reviewed</span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </div>
       )}
 
       {/* Approve Dialog */}
       <Dialog open={!!appToApprove} onOpenChange={(open) => !open && setAppToApprove(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-emerald-600" />
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-primary" />
               Approve Tour Operator Application
             </DialogTitle>
-            <DialogDescription className="text-xs text-slate-600 pt-2 leading-relaxed">
-              You are approving <strong className="text-slate-900">{appToApprove?.agencyName}</strong> (License: {appToApprove?.accreditationNumber}).
+            <DialogDescription className="pt-1">
+              You are approving <strong className="font-medium text-foreground">{appToApprove?.agencyName}</strong> (License: {appToApprove?.accreditationNumber}).
               <br />
               <br />
-              This will grant this agency the <strong className="text-emerald-700">Tour Operator</strong> role, allowing them to access the portal, create tour packages, schedule departures, and oversee passenger manifests.
+              This will grant this agency the <strong className="font-medium text-foreground">Tour Operator</strong> role, allowing them to access the portal, create tour packages, schedule departures, and oversee passenger manifests.
             </DialogDescription>
           </DialogHeader>
 
-          <DialogFooter className="gap-2 sm:gap-0 mt-4">
+          <DialogFooter>
             <Button
               variant="outline"
-              size="sm"
               onClick={() => setAppToApprove(null)}
               disabled={isApproving}
             >
               Cancel
             </Button>
-            <Button
-              size="sm"
-              onClick={handleApproveConfirm}
-              disabled={isApproving}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
-            >
+            <Button onClick={handleApproveConfirm} disabled={isApproving}>
               {isApproving ? (
                 <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Approving...
+                  <Loader2 className="h-4 w-4 animate-spin" /> Approving...
                 </>
               ) : (
                 <>
-                  <CheckCircle className="h-3.5 w-3.5" /> Confirm Approval
+                  <CheckCircle className="h-4 w-4" /> Confirm Approval
                 </>
               )}
             </Button>
@@ -574,52 +556,45 @@ export const OperatorsManagePage = () => {
 
       {/* Reject Dialog */}
       <Dialog open={!!appToReject} onOpenChange={(open) => !open && setAppToReject(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-red-700 flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-600" />
               Reject Operator Application
             </DialogTitle>
-            <DialogDescription className="text-xs text-slate-600 pt-1 leading-relaxed">
-              Provide feedback for <strong className="text-slate-900">{appToReject?.agencyName}</strong> explaining why accreditation could not be granted.
+            <DialogDescription>
+              Provide feedback for <strong className="font-medium text-foreground">{appToReject?.agencyName}</strong> explaining why accreditation could not be granted.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="my-2">
-            <label className="text-xs font-bold text-slate-700 block mb-1">
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-slate-700">
               Rejection Reason / Notes
             </label>
             <textarea
               rows={3}
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 p-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-red-500"
+              className={`${fieldClass} resize-y`}
             />
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0 mt-2">
+          <DialogFooter>
             <Button
               variant="outline"
-              size="sm"
               onClick={() => setAppToReject(null)}
               disabled={isRejecting}
             >
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleRejectConfirm}
-              disabled={isRejecting}
-              className="bg-red-600 hover:bg-red-700 text-white gap-1.5"
-            >
+            <Button variant="destructive" onClick={handleRejectConfirm} disabled={isRejecting}>
               {isRejecting ? (
                 <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Rejecting...
+                  <Loader2 className="h-4 w-4 animate-spin" /> Rejecting...
                 </>
               ) : (
                 <>
-                  <XCircle className="h-3.5 w-3.5" /> Reject Application
+                  <XCircle className="h-4 w-4" /> Reject Application
                 </>
               )}
             </Button>

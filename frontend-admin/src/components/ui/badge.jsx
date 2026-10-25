@@ -3,18 +3,18 @@ import { cva } from 'class-variance-authority';
 import { cn } from '../../lib/utils';
 
 const badgeVariants = cva(
-  'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500',
+  'inline-flex min-h-[22px] w-fit items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors',
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-emerald-600 text-white shadow',
-        secondary: 'border-transparent bg-slate-100 text-slate-800',
-        destructive: 'border-transparent bg-red-100 text-red-800',
-        outline: 'text-slate-800 border-slate-200',
-        success: 'border-transparent bg-emerald-100 text-emerald-800',
-        warning: 'border-transparent bg-amber-100 text-amber-800',
-        info: 'border-transparent bg-blue-100 text-blue-800',
-        purple: 'border-transparent bg-purple-100 text-purple-800',
+        default: 'bg-forest text-white',
+        secondary: 'bg-[#EFEBE3] text-[#5d6460]',
+        destructive: 'bg-[#F6E3E0] text-status-bad',
+        outline: 'bg-transparent text-muted-foreground ring-1 ring-inset ring-input',
+        success: 'bg-[#E1F0E8] text-status-ok',
+        warning: 'bg-[#F7ECD6] text-status-warn',
+        info: 'bg-sage-soft text-forest-soft ring-1 ring-inset ring-sage',
+        purple: 'bg-violet-50 text-violet-800',
       },
     },
     defaultVariants: {
@@ -24,5 +24,5 @@ const badgeVariants = cva(
 );
 
 export function Badge({ className, variant, ...props }) {
-  return <div className={cn(badgeVariants({ variant }), className)} {...props} />;
+  return <span className={cn(badgeVariants({ variant }), className)} {...props} />;
 }

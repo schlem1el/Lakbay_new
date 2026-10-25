@@ -186,33 +186,28 @@ export const PromotionsManagePage = () => {
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-5">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Promotions & Campaigns</h1>
-            <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200">
-              Direct Discounts
-            </Badge>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Promotions & Campaigns</h1>
+            <Badge variant="success">Direct Discounts</Badge>
           </div>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Publish customer-facing promotional campaign ribbons and deal banners across the platform.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Button
             variant="outline"
             onClick={fetchPromotions}
             disabled={loading}
-            className="flex items-center gap-1.5 cursor-pointer"
+            className="w-full sm:w-auto"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
           {['admin', 'coordinator'].includes(role) && (
-            <Button
-              onClick={openCreateModal}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 cursor-pointer"
-            >
+            <Button onClick={openCreateModal} className="w-full sm:w-auto">
               <Plus className="h-4 w-4" />
               New Campaign Banner
             </Button>
@@ -221,31 +216,31 @@ export const PromotionsManagePage = () => {
       </div>
 
       {/* Search Bar */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+      <div className="rounded-lg border border-border bg-card p-4">
+        <div className="relative w-full sm:max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             placeholder="Search campaigns by title or tag..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 bg-white"
+            className="pl-9"
           />
         </div>
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg bg-red-50 p-4 text-sm text-red-700 border border-red-200">
-          <AlertCircle className="h-4 w-4 shrink-0" />
+        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Campaign Banners Table */}
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <Table>
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <Table className="min-w-[860px]">
           <TableHeader>
-            <TableRow className="bg-slate-50/80">
-              <TableHead className="w-24">Banner</TableHead>
+            <TableRow>
+              <TableHead className="w-28">Banner</TableHead>
               <TableHead>Campaign Details</TableHead>
               <TableHead>Discount / Badge</TableHead>
               <TableHead>Destination Link</TableHead>
@@ -256,14 +251,14 @@ export const PromotionsManagePage = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-40 text-center text-slate-400">
-                  <RefreshCw className="mx-auto h-6 w-6 animate-spin text-emerald-600 mb-2" />
+                <TableCell colSpan={6} className="h-40 text-center text-muted-foreground">
+                  <RefreshCw className="mx-auto mb-2 h-5 w-5 animate-spin text-slate-400" />
                   Loading promotional campaigns...
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-40 text-center text-slate-400">
+                <TableCell colSpan={6} className="h-40 text-center text-muted-foreground">
                   No promotional campaigns found. Create your first campaign banner to showcase special offers!
                 </TableCell>
               </TableRow>
@@ -275,66 +270,66 @@ export const PromotionsManagePage = () => {
                       <img
                         src={promo.imageUrl}
                         alt={promo.title}
-                        className="h-12 w-20 rounded-md object-cover border border-slate-200 shadow-xs"
+                        className="h-12 w-20 rounded-md border border-border object-cover"
                       />
                     ) : (
-                      <div className="flex h-12 w-20 items-center justify-center rounded-md bg-emerald-50 text-emerald-600 border border-emerald-100">
+                      <div className="flex h-12 w-20 items-center justify-center rounded-md bg-slate-100 text-slate-400">
                         <Megaphone className="h-5 w-5" />
                       </div>
                     )}
                   </TableCell>
                   <TableCell>
-                    <div className="font-semibold text-slate-900">{promo.title}</div>
+                    <div className="font-medium text-foreground">{promo.title}</div>
                     {promo.subtitle && (
-                      <div className="text-xs text-slate-500 line-clamp-1">{promo.subtitle}</div>
+                      <div className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{promo.subtitle}</div>
                     )}
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-col gap-1 items-start">
+                    <div className="flex flex-col items-start gap-1.5">
                       {promo.badgeText && (
-                        <Badge className="bg-amber-100 text-amber-900 border-amber-200 text-[10px] font-bold">
+                        <Badge variant="warning" className="uppercase tracking-wide">
                           {promo.badgeText}
                         </Badge>
                       )}
                       {promo.discountHighlight && (
-                        <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
-                          <Percent className="h-3 w-3" />
+                        <span className="flex items-center gap-1 text-xs font-medium text-slate-700">
+                          <Percent className="h-3 w-3 text-slate-400" />
                           {promo.discountHighlight}
                         </span>
                       )}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="inline-flex items-center gap-1 text-xs text-slate-600 font-mono bg-slate-100 px-2 py-0.5 rounded">
-                      {promo.actionUrl || '/packages'}
-                      <ExternalLink className="h-3 w-3 text-slate-400" />
+                    <span className="inline-flex max-w-[220px] items-center gap-1.5 rounded-md bg-slate-50 px-2 py-0.5 font-mono text-xs text-slate-600 ring-1 ring-inset ring-slate-200">
+                      <span className="truncate">{promo.actionUrl || '/packages'}</span>
+                      <ExternalLink className="h-3 w-3 shrink-0 text-slate-400" />
                     </span>
                   </TableCell>
                   <TableCell>
                     <button
                       type="button"
                       onClick={() => handleTogglePublish(promo)}
-                      className="cursor-pointer"
+                      className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
                       title="Click to toggle live publication"
                     >
                       {promo.isPublished ? (
-                        <Badge variant="success" className="flex items-center gap-1">
+                        <Badge variant="success">
                           <Check className="h-3 w-3" /> Live
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="text-slate-400 border-slate-300">
+                        <Badge variant="outline" className="text-slate-500">
                           Draft (Hidden)
                         </Badge>
                       )}
                     </button>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1.5">
+                    <div className="flex items-center justify-end gap-1">
                       <Button
                         variant="ghost"
-                        size="sm"
+                        size="icon"
                         onClick={() => openEditModal(promo)}
-                        className="h-8 w-8 p-0 text-slate-600 hover:text-emerald-700 cursor-pointer"
+                        className="h-8 w-8 text-slate-500 hover:text-foreground"
                         title="Edit campaign"
                       >
                         <Edit2 className="h-4 w-4" />
@@ -342,9 +337,9 @@ export const PromotionsManagePage = () => {
                       {role === 'admin' && (
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={() => setPromoToDelete(promo)}
-                          className="h-8 w-8 p-0 text-slate-400 hover:text-red-600 cursor-pointer"
+                          className="h-8 w-8 text-slate-500 hover:bg-red-50 hover:text-red-600"
                           title="Delete campaign"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -361,10 +356,10 @@ export const PromotionsManagePage = () => {
 
       {/* Create / Edit Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-lg">
-              <Sparkles className="h-5 w-5 text-emerald-600" />
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
               {editingPromo ? 'Edit Promotional Campaign' : 'Create Promotional Campaign'}
             </DialogTitle>
             <DialogDescription>
@@ -372,11 +367,9 @@ export const PromotionsManagePage = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1.5">
-              <Label htmlFor="promo-title" className="text-xs font-semibold">
-                Campaign Headline *
-              </Label>
+              <Label htmlFor="promo-title">Campaign Headline *</Label>
               <Input
                 id="promo-title"
                 placeholder="e.g. Summer Island Flash Sale"
@@ -387,9 +380,7 @@ export const PromotionsManagePage = () => {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="promo-subtitle" className="text-xs font-semibold">
-                Subtitle / Description
-              </Label>
+              <Label htmlFor="promo-subtitle">Subtitle / Description</Label>
               <Input
                 id="promo-subtitle"
                 placeholder="e.g. Book selected Palawan and Boracay tours at exclusive direct rates."
@@ -398,11 +389,9 @@ export const PromotionsManagePage = () => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="promo-badge" className="text-xs font-semibold">
-                  Badge Tag
-                </Label>
+                <Label htmlFor="promo-badge">Badge Tag</Label>
                 <Input
                   id="promo-badge"
                   placeholder="e.g. 20% OFF or LIMITED DEAL"
@@ -412,9 +401,7 @@ export const PromotionsManagePage = () => {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="promo-highlight" className="text-xs font-semibold">
-                  Discount Highlight Text
-                </Label>
+                <Label htmlFor="promo-highlight">Discount Highlight Text</Label>
                 <Input
                   id="promo-highlight"
                   placeholder="e.g. Up to 25% Instant Savings"
@@ -424,23 +411,20 @@ export const PromotionsManagePage = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="promo-url" className="text-xs font-semibold">
-                  Action Link URL
-                </Label>
+                <Label htmlFor="promo-url">Action Link URL</Label>
                 <Input
                   id="promo-url"
                   placeholder="/packages?discounted=true"
                   value={formData.actionUrl}
                   onChange={(e) => setFormData({ ...formData, actionUrl: e.target.value })}
+                  className="font-mono text-[13px]"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="promo-btn" className="text-xs font-semibold">
-                  Button Call-to-Action
-                </Label>
+                <Label htmlFor="promo-btn">Button Call-to-Action</Label>
                 <Input
                   id="promo-btn"
                   placeholder="e.g. View Discounted Tours"
@@ -452,7 +436,7 @@ export const PromotionsManagePage = () => {
 
             {/* Banner Image Upload */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Campaign Banner Image</Label>
+              <Label>Campaign Banner Image</Label>
               <ImageUpload
                 folder="promotions"
                 images={formData.imageUrl ? [formData.imageUrl] : []}
@@ -462,37 +446,32 @@ export const PromotionsManagePage = () => {
             </div>
 
             {/* Published Switch */}
-            <div className="flex items-center gap-2 pt-2">
+            <div className="flex items-start gap-2.5 rounded-md border border-border p-4">
               <input
                 type="checkbox"
                 id="promo-published"
                 checked={formData.isPublished}
                 onChange={(e) => setFormData({ ...formData, isPublished: e.target.checked })}
-                className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 accent-primary cursor-pointer"
               />
-              <Label htmlFor="promo-published" className="text-sm font-medium text-slate-700 cursor-pointer">
+              <Label htmlFor="promo-published" className="font-normal leading-snug cursor-pointer">
                 Publish immediately to customer homepages and package ribbons
               </Label>
             </div>
 
-            <DialogFooter className="pt-4">
+            <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsModalOpen(false)}
                 disabled={saving}
-                className="cursor-pointer"
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={saving}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
-              >
+              <Button type="submit" disabled={saving}>
                 {saving ? (
                   <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    <RefreshCw className="h-4 w-4 animate-spin" />
                     Saving...
                   </>
                 ) : editingPromo ? (
@@ -510,29 +489,23 @@ export const PromotionsManagePage = () => {
       <Dialog open={Boolean(promoToDelete)} onOpenChange={() => setPromoToDelete(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-red-600 flex items-center gap-2">
-              <Trash2 className="h-5 w-5" />
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-red-600" />
               Delete Promotional Campaign
             </DialogTitle>
             <DialogDescription>
               Are you sure you want to permanently delete "{promoToDelete?.title}"? This campaign banner will no longer be visible to travelers.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="pt-4">
+          <DialogFooter>
             <Button
               variant="outline"
               onClick={() => setPromoToDelete(null)}
               disabled={isDeleting}
-              className="cursor-pointer"
             >
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700 text-white cursor-pointer"
-            >
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
               {isDeleting ? 'Deleting...' : 'Confirm Delete'}
             </Button>
           </DialogFooter>

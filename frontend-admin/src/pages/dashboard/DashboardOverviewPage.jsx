@@ -58,8 +58,8 @@ export const DashboardOverviewPage = () => {
   if (loading) {
     return (
       <div className="flex h-96 flex-col items-center justify-center gap-3">
-        <RefreshCw className="h-8 w-8 animate-spin text-emerald-600" />
-        <span className="text-sm font-medium text-slate-500">
+        <RefreshCw className="h-6 w-6 animate-spin text-slate-400" />
+        <span className="text-sm text-muted-foreground">
           Aggregating platform revenue and operations data...
         </span>
       </div>
@@ -68,11 +68,13 @@ export const DashboardOverviewPage = () => {
 
   if (error) {
     return (
-      <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-red-700">
-        <AlertTriangle className="mx-auto h-8 w-8 text-red-500 mb-2" />
-        <h3 className="text-lg font-bold">Failed to Load Dashboard</h3>
-        <p className="mt-1 text-sm text-red-600">{error}</p>
-        <Button onClick={fetchMetrics} variant="outline" className="mt-4 border-red-300">
+      <div className="mx-auto max-w-lg rounded-lg border border-red-200 bg-red-50 px-6 py-8 text-center">
+        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-red-100">
+          <AlertTriangle className="h-5 w-5 text-red-600" />
+        </div>
+        <h3 className="text-base font-semibold text-red-800">Failed to Load Dashboard</h3>
+        <p className="mt-1 text-sm text-red-700">{error}</p>
+        <Button onClick={fetchMetrics} variant="outline" className="mt-5 w-full border-red-200 sm:w-auto">
           Retry Loading
         </Button>
       </div>
@@ -83,81 +85,80 @@ export const DashboardOverviewPage = () => {
   const charts = data?.charts || {};
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 lg:space-y-8">
       {/* Page Title & Action Bar */}
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-heading">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             {role === 'operator'
               ? `${profile?.agencyName || 'Tour Operator'} Dashboard`
               : 'Operations & Financial Overview'}
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="mt-1 text-sm text-muted-foreground">
             {role === 'operator'
               ? 'Performance summary for your accredited tour packages, active departures, and traveler reservations.'
               : 'Real-time Philippine travel booking volume, verified revenue, and departure schedules.'}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchMetrics}
-            className="flex items-center gap-1.5 text-xs text-slate-600"
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-            Refresh Metrics
-          </Button>
-        </div>
+        <Button variant="outline" onClick={fetchMetrics} className="w-full shrink-0 sm:w-auto">
+          <RefreshCw className="h-4 w-4" />
+          Refresh Metrics
+        </Button>
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {/* Total Collected Revenue */}
-        <Card className="border-slate-200 shadow-sm bg-gradient-to-br from-white to-emerald-50/40">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2 sm:pb-2">
+            <CardTitle className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Verified Revenue
             </CardTitle>
-            <div className="rounded-lg bg-emerald-100 p-2 text-emerald-700">
-              <span className="font-bold text-sm">₱</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-50 text-emerald-700">
+              <span className="text-sm font-semibold">₱</span>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-extrabold text-slate-900">
+            <div className="font-heading text-[2.5rem] font-normal leading-none tracking-normal tabular-nums text-foreground">
               {formatPHP(summary.collectedRevenue || summary.totalRevenue || 0)}
             </div>
-            <p className="mt-1 text-xs text-emerald-700 flex items-center gap-1 font-medium">
-              <TrendingUp className="h-3.5 w-3.5" />
+            <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+              <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
               Excludes unpaid and cancelled bookings
             </p>
           </CardContent>
         </Card>
 
         {/* Total Bookings / Booked Travelers */}
-        <Card className="border-slate-200 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2 sm:pb-2">
+            <CardTitle className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               {role === 'operator' ? 'Booked Travelers' : 'Total Reservations'}
             </CardTitle>
-            <div className="rounded-lg bg-blue-100 p-2 text-blue-700">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sky-50 text-sky-700">
               <Ticket className="h-4 w-4" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-extrabold text-slate-900">
+            <div className="font-heading text-[2.5rem] font-normal leading-none tracking-normal tabular-nums text-foreground">
               {role === 'operator'
                 ? summary.totalBookedTravelers || 0
                 : summary.totalBookings || 0}
             </div>
-            <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
+            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
               {role === 'operator' ? (
-                <span className="font-semibold text-emerald-600">On your active departures</span>
+                <span>On your active departures</span>
               ) : (
                 <>
-                  <span className="font-semibold text-emerald-600">{summary.confirmedBookings || 0} Confirmed</span>
-                  <span>&bull;</span>
-                  <span className="font-semibold text-amber-600">{summary.pendingBookings || 0} Pending</span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    {summary.confirmedBookings || 0} Confirmed
+                  </span>
+                  <span className="text-slate-300">&bull;</span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                    {summary.pendingBookings || 0} Pending
+                  </span>
                 </>
               )}
             </div>
@@ -165,42 +166,42 @@ export const DashboardOverviewPage = () => {
         </Card>
 
         {/* Upcoming Open Departures */}
-        <Card className="border-slate-200 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2 sm:pb-2">
+            <CardTitle className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Active Departures
             </CardTitle>
-            <div className="rounded-lg bg-purple-100 p-2 text-purple-700">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-violet-50 text-violet-700">
               <Calendar className="h-4 w-4" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-extrabold text-slate-900">
+            <div className="font-heading text-[2.5rem] font-normal leading-none tracking-normal tabular-nums text-foreground">
               {summary.upcomingDeparturesCount || summary.activeDeparturesCount || 0}
             </div>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               Available future departure dates
             </p>
           </CardContent>
         </Card>
 
         {/* Registered Customers / Tour Packages */}
-        <Card className="border-slate-200 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2 sm:pb-2">
+            <CardTitle className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               {role === 'operator' ? 'Agency Tour Packages' : 'Registered Travelers'}
             </CardTitle>
-            <div className="rounded-lg bg-amber-100 p-2 text-amber-700">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-amber-50 text-amber-700">
               {role === 'operator' ? <Package className="h-4 w-4" /> : <Users className="h-4 w-4" />}
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-extrabold text-slate-900">
+            <div className="font-heading text-[2.5rem] font-normal leading-none tracking-normal tabular-nums text-foreground">
               {role === 'operator'
                 ? summary.totalPackages || 0
                 : summary.totalCustomers || 0}
             </div>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               {role === 'operator'
                 ? `${summary.approvalBreakdown?.approved || 0} approved, ${summary.approvalBreakdown?.pending || 0} pending`
                 : 'Verified platform traveler profiles'}
@@ -210,14 +211,12 @@ export const DashboardOverviewPage = () => {
       </div>
 
       {/* Breakdown and Top Packages Grid */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
         {/* Booking Status Distribution */}
-        <Card className="border-slate-200 shadow-sm">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-base font-bold text-slate-900">
-              Booking Status Breakdown
-            </CardTitle>
-            <CardDescription className="text-xs text-slate-500">
+            <CardTitle>Booking Status Breakdown</CardTitle>
+            <CardDescription>
               Current operational distribution of customer reservations
             </CardDescription>
           </CardHeader>
@@ -228,13 +227,13 @@ export const DashboardOverviewPage = () => {
                 const pct = Math.round((item.count / total) * 100);
                 return (
                   <div key={item.status} className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs font-medium">
+                    <div className="flex items-center justify-between text-sm">
                       <span className="text-slate-700">{item.status}</span>
-                      <span className="font-semibold text-slate-900">
-                        {item.count} ({pct}%)
+                      <span className="tabular-nums text-muted-foreground">
+                        <span className="font-medium text-foreground">{item.count}</span> ({pct}%)
                       </span>
                     </div>
-                    <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
                       <div
                         className={`h-full rounded-full ${
                           item.status === 'Confirmed'
@@ -242,7 +241,7 @@ export const DashboardOverviewPage = () => {
                             : item.status === 'Pending'
                             ? 'bg-amber-400'
                             : item.status === 'Completed'
-                            ? 'bg-blue-500'
+                            ? 'bg-sky-500'
                             : 'bg-red-400'
                         }`}
                         style={{ width: `${pct}%` }}
@@ -256,80 +255,79 @@ export const DashboardOverviewPage = () => {
         </Card>
 
         {/* Top Tour Packages */}
-        <Card className="border-slate-200 shadow-sm lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-base font-bold text-slate-900">
-                Most Popular Tour Packages
-              </CardTitle>
-              <CardDescription className="text-xs text-slate-500">
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1">
+              <CardTitle>Most Popular Tour Packages</CardTitle>
+              <CardDescription>
                 Ranked by total booked passenger headcount
               </CardDescription>
             </div>
-            <Link to="/catalog/packages">
-              <Button variant="ghost" size="sm" className="text-xs text-emerald-600 hover:text-emerald-700 flex items-center gap-1">
-                View Packages <ArrowRight className="h-3 w-3" />
-              </Button>
+            <Link
+              to="/catalog/packages"
+              className="inline-flex shrink-0 items-center gap-1 rounded-md text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              View Packages <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </CardHeader>
           <CardContent>
             {(!charts.topPackages || charts.topPackages.length === 0) ? (
-              <div className="py-8 text-center text-xs text-slate-400">
+              <div className="rounded-md border border-dashed border-border py-10 text-center text-sm text-muted-foreground">
                 No booking records found for popularity ranking.
               </div>
             ) : (
-              <div className="space-y-3">
+              <ol className="divide-y divide-border rounded-md border border-border">
                 {charts.topPackages.map((pkg, idx) => (
-                  <div
+                  <li
                     key={pkg.name}
-                    className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/50 p-3"
+                    className="flex items-center justify-between gap-3 px-4 py-3"
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-700">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 text-xs font-semibold tabular-nums text-slate-600">
                         {idx + 1}
                       </span>
-                      <span className="text-sm font-semibold text-slate-800">
+                      <span className="truncate text-sm font-medium text-foreground">
                         {pkg.name}
                       </span>
                     </div>
-                    <Badge variant="outline" className="font-semibold bg-white text-slate-700">
+                    <Badge variant="secondary" className="shrink-0 tabular-nums">
                       {pkg.travelers} traveler{pkg.travelers === 1 ? '' : 's'}
                     </Badge>
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ol>
             )}
           </CardContent>
         </Card>
       </div>
 
       {/* Catalog Quick Stats */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">
+      <div className="rounded-lg border border-border bg-card p-5 sm:p-6">
+        <h3 className="mb-4 text-sm font-semibold text-foreground">
           Catalog Inventory Summary
         </h3>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div className="rounded-lg bg-slate-50 p-4 border border-slate-100">
-            <span className="text-xs font-medium text-slate-500">Destinations</span>
-            <div className="text-xl font-bold text-slate-900 mt-1">
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border border-border bg-border lg:grid-cols-4">
+          <div className="bg-card p-4">
+            <span className="text-xs text-muted-foreground">Destinations</span>
+            <div className="mt-1 font-heading text-[2rem] font-normal leading-none tabular-nums text-foreground">
               {summary.totalDestinations || 0}
             </div>
           </div>
-          <div className="rounded-lg bg-slate-50 p-4 border border-slate-100">
-            <span className="text-xs font-medium text-slate-500">Tour Packages</span>
-            <div className="text-xl font-bold text-slate-900 mt-1">
+          <div className="bg-card p-4">
+            <span className="text-xs text-muted-foreground">Tour Packages</span>
+            <div className="mt-1 font-heading text-[2rem] font-normal leading-none tabular-nums text-foreground">
               {summary.totalPackages || 0}
             </div>
           </div>
-          <div className="rounded-lg bg-slate-50 p-4 border border-slate-100">
-            <span className="text-xs font-medium text-slate-500">Completed Tours</span>
-            <div className="text-xl font-bold text-slate-900 mt-1">
+          <div className="bg-card p-4">
+            <span className="text-xs text-muted-foreground">Completed Tours</span>
+            <div className="mt-1 font-heading text-[2rem] font-normal leading-none tabular-nums text-foreground">
               {summary.completedBookings || 0}
             </div>
           </div>
-          <div className="rounded-lg bg-slate-50 p-4 border border-slate-100">
-            <span className="text-xs font-medium text-slate-500">Cancelled Bookings</span>
-            <div className="text-xl font-bold text-slate-900 mt-1">
+          <div className="bg-card p-4">
+            <span className="text-xs text-muted-foreground">Cancelled Bookings</span>
+            <div className="mt-1 font-heading text-[2rem] font-normal leading-none tabular-nums text-foreground">
               {summary.cancelledBookings || 0}
             </div>
           </div>

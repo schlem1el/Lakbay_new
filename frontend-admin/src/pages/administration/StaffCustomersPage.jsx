@@ -37,6 +37,9 @@ import {
 
 const STAFF_ROLES = ['coordinator', 'support', 'guide', 'admin'];
 
+const fieldClass =
+  'w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground transition-colors placeholder:text-slate-400 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20';
+
 export const StaffCustomersPage = () => {
   const { user: currentStaffUser } = useStaffAuth();
 
@@ -177,43 +180,38 @@ export const StaffCustomersPage = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             Identity & Access Management (IAM)
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="mt-1 text-sm text-muted-foreground">
             Manage staff credentials, custom security claims, role permissions, and customer accounts.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex items-center gap-1.5 shadow-sm"
-          >
-            <UserPlus className="h-4 w-4" />
-            Provision Staff Member
-          </Button>
-        </div>
+        <Button onClick={() => setIsCreateModalOpen(true)} className="w-full shrink-0 sm:w-auto">
+          <UserPlus className="h-4 w-4" />
+          Provision Staff Member
+        </Button>
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative w-full lg:max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             placeholder="Search by name, email, phone..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 text-sm"
+            className="pl-9"
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="grid grid-cols-1 gap-2 sm:flex sm:items-center">
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={`${fieldClass} h-10 sm:w-44`}
           >
             <option value="">All Roles</option>
             <option value="admin">Admin</option>
@@ -226,7 +224,7 @@ export const StaffCustomersPage = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={`${fieldClass} h-10 sm:w-44`}
           >
             <option value="">All Statuses</option>
             <option value="active">Active</option>
@@ -234,10 +232,10 @@ export const StaffCustomersPage = () => {
           </select>
 
           <Button
-            variant="ghost"
-            size="sm"
+            variant="outline"
+            size="icon"
             onClick={fetchUsers}
-            className="text-slate-500 hover:text-slate-800"
+            className="h-10 w-full text-slate-500 sm:w-10"
           >
             <RefreshCw className="h-4 w-4" />
           </Button>
@@ -246,15 +244,15 @@ export const StaffCustomersPage = () => {
 
       {/* Error alert */}
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-center gap-2">
-          <AlertCircle className="h-4 w-4 shrink-0" />
+        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Users Table */}
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <Table>
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <Table className="min-w-[820px]">
           <TableHeader>
             <TableRow>
               <TableHead>User Profile</TableHead>
@@ -268,14 +266,14 @@ export const StaffCustomersPage = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-40 text-center text-slate-400">
-                  <RefreshCw className="mx-auto h-6 w-6 animate-spin text-emerald-600 mb-2" />
+                <TableCell colSpan={6} className="h-40 text-center text-muted-foreground">
+                  <RefreshCw className="mx-auto mb-2 h-5 w-5 animate-spin text-slate-400" />
                   Loading user records...
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-40 text-center text-slate-400">
+                <TableCell colSpan={6} className="h-40 text-center text-muted-foreground">
                   No user accounts found matching your filter criteria.
                 </TableCell>
               </TableRow>
@@ -287,19 +285,19 @@ export const StaffCustomersPage = () => {
                   <TableRow key={u.id || u.uid}>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 font-bold text-slate-700 text-xs border border-slate-200">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold uppercase text-slate-700 ring-1 ring-inset ring-slate-200">
                           {u.fullName?.charAt(0) || u.email?.charAt(0) || 'U'}
                         </div>
-                        <div>
-                          <div className="font-semibold text-slate-900 text-sm flex items-center gap-1.5">
-                            <span>{u.fullName || 'User'}</span>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 font-medium text-foreground">
+                            <span className="truncate">{u.fullName || 'User'}</span>
                             {isSelf && (
-                              <Badge variant="outline" className="text-[10px] px-1 py-0">
+                              <Badge variant="outline" className="px-1.5 text-[10px]">
                                 You
                               </Badge>
                             )}
                           </div>
-                          <div className="text-xs text-slate-500">{u.email}</div>
+                          <div className="truncate text-xs text-muted-foreground">{u.email}</div>
                         </div>
                       </div>
                     </TableCell>
@@ -316,35 +314,32 @@ export const StaffCustomersPage = () => {
                             ? 'secondary'
                             : 'outline'
                         }
-                        className="capitalize font-semibold text-xs"
+                        className="capitalize"
                       >
                         {u.role || 'customer'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-xs text-slate-600">
+                    <TableCell className="whitespace-nowrap tabular-nums text-slate-600">
                       {u.phone || 'N/A'}
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant={isActive ? 'success' : 'destructive'}
-                        className="text-xs font-medium"
-                      >
+                      <Badge variant={isActive ? 'success' : 'destructive'} className="capitalize">
                         {u.accountStatus || 'active'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-xs text-slate-400">
+                    <TableCell className="whitespace-nowrap tabular-nums text-muted-foreground">
                       {(u.createdAt || '').substring(0, 10)}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={() => {
                             setSelectedUserForRole(u);
                             setNewRole(u.role || 'support');
                           }}
-                          className="h-8 w-8 p-0 text-slate-600 hover:text-emerald-600"
+                          className="h-8 w-8 text-slate-500 hover:text-foreground"
                           title="Change Role"
                         >
                           <Edit className="h-4 w-4" />
@@ -352,12 +347,12 @@ export const StaffCustomersPage = () => {
                         {!isSelf && (
                           <Button
                             variant="ghost"
-                            size="sm"
+                            size="icon"
                             onClick={() => handleToggleStatus(u)}
-                            className={`h-8 w-8 p-0 ${
+                            className={`h-8 w-8 text-slate-500 ${
                               isActive
-                                ? 'text-slate-600 hover:text-red-600'
-                                : 'text-slate-600 hover:text-emerald-600'
+                                ? 'hover:bg-red-50 hover:text-red-600'
+                                : 'hover:bg-emerald-50 hover:text-emerald-700'
                             }`}
                             title={isActive ? 'Deactivate Account' : 'Reactivate Account'}
                           >
@@ -379,7 +374,7 @@ export const StaffCustomersPage = () => {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-emerald-600" />
+              <ShieldCheck className="h-5 w-5 text-primary" />
               Provision Staff Account
             </DialogTitle>
             <DialogDescription>
@@ -387,11 +382,9 @@ export const StaffCustomersPage = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleCreateStaff} className="space-y-4 py-2">
+          <form onSubmit={handleCreateStaff} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="staff-name" className="text-xs font-semibold">
-                Full Legal Name *
-              </Label>
+              <Label htmlFor="staff-name">Full Legal Name *</Label>
               <Input
                 id="staff-name"
                 placeholder="Juan Dela Cruz"
@@ -402,9 +395,7 @@ export const StaffCustomersPage = () => {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="staff-email" className="text-xs font-semibold">
-                Staff Corporate Email *
-              </Label>
+              <Label htmlFor="staff-email">Staff Corporate Email *</Label>
               <Input
                 id="staff-email"
                 type="email"
@@ -416,9 +407,7 @@ export const StaffCustomersPage = () => {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="staff-password" className="text-xs font-semibold">
-                Temporary Password *
-              </Label>
+              <Label htmlFor="staff-password">Temporary Password *</Label>
               <Input
                 id="staff-password"
                 type="password"
@@ -429,16 +418,14 @@ export const StaffCustomersPage = () => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="staff-role" className="text-xs font-semibold">
-                  Assigned Staff Role *
-                </Label>
+                <Label htmlFor="staff-role">Assigned Staff Role *</Label>
                 <select
                   id="staff-role"
                   value={createForm.role}
                   onChange={(e) => setCreateForm({ ...createForm, role: e.target.value })}
-                  className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className={`${fieldClass} h-10`}
                   required
                 >
                   <option value="support">Support Agent</option>
@@ -449,9 +436,7 @@ export const StaffCustomersPage = () => {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="staff-phone" className="text-xs font-semibold">
-                  Contact Phone
-                </Label>
+                <Label htmlFor="staff-phone">Contact Phone</Label>
                 <Input
                   id="staff-phone"
                   placeholder="+639171234567"
@@ -461,7 +446,7 @@ export const StaffCustomersPage = () => {
               </div>
             </div>
 
-            <DialogFooter className="mt-4">
+            <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
@@ -470,11 +455,7 @@ export const StaffCustomersPage = () => {
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={creating}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
-              >
+              <Button type="submit" disabled={creating}>
                 {creating ? 'Provisioning...' : 'Create Staff Account'}
               </Button>
             </DialogFooter>
@@ -490,24 +471,22 @@ export const StaffCustomersPage = () => {
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-emerald-600" />
+              <Shield className="h-5 w-5 text-primary" />
               Update User Role
             </DialogTitle>
             <DialogDescription>
-              Assign new security permissions for <strong>{selectedUserForRole?.fullName}</strong>.
+              Assign new security permissions for <strong className="font-medium text-foreground">{selectedUserForRole?.fullName}</strong>.
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSaveRole} className="space-y-4 py-2">
+          <form onSubmit={handleSaveRole} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="new-role-select" className="text-xs font-semibold">
-                Select Role
-              </Label>
+              <Label htmlFor="new-role-select">Select Role</Label>
               <select
                 id="new-role-select"
                 value={newRole}
                 onChange={(e) => setNewRole(e.target.value)}
-                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className={`${fieldClass} h-10`}
               >
                 <option value="customer">Customer</option>
                 <option value="support">Support Agent</option>
@@ -517,11 +496,11 @@ export const StaffCustomersPage = () => {
               </select>
             </div>
 
-            <p className="text-[11px] text-slate-500">
+            <p className="rounded-md bg-slate-50 px-3 py-2 text-xs text-muted-foreground">
               Note: Updating this will refresh the user's custom user token claims in Firebase Auth.
             </p>
 
-            <DialogFooter className="mt-4">
+            <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
@@ -530,11 +509,7 @@ export const StaffCustomersPage = () => {
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={updatingRole}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
-              >
+              <Button type="submit" disabled={updatingRole}>
                 {updatingRole ? 'Updating...' : 'Save Role'}
               </Button>
             </DialogFooter>

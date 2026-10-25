@@ -37,6 +37,11 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 
+const fieldClass =
+  'w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground transition-colors placeholder:text-slate-400 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20';
+
+const sectionLabel = 'text-xs font-medium uppercase tracking-wide text-muted-foreground';
+
 export const BookingsManagePage = () => {
   const [bookings, setBookings] = useState([]);
   const [departures, setDepartures] = useState([]);
@@ -206,45 +211,39 @@ export const BookingsManagePage = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             Bookings & Reservations Hub
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="mt-1 text-sm text-muted-foreground">
             Search customer reservations, audit payment statuses, reschedule departures, and manage support logs.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchBookings}
-            className="flex items-center gap-1.5 text-xs text-slate-600"
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-            Refresh Bookings
-          </Button>
-        </div>
+        <Button variant="outline" onClick={fetchBookings} className="w-full shrink-0 sm:w-auto">
+          <RefreshCw className="h-4 w-4" />
+          Refresh Bookings
+        </Button>
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+      {/* One row on desktop: search grows, filters keep a fixed width */}
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center">
+        <div className="relative w-full min-w-0 lg:flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             placeholder="Search ref #, name, email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 text-sm"
+            className="pl-9"
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:shrink-0 lg:flex-nowrap lg:items-center">
           <select
             value={bookingStatusFilter}
             onChange={(e) => setBookingStatusFilter(e.target.value)}
-            className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={`${fieldClass} h-10 lg:w-48`}
           >
             <option value="">All Booking Statuses</option>
             <option value="Confirmed">Confirmed</option>
@@ -256,7 +255,7 @@ export const BookingsManagePage = () => {
           <select
             value={paymentStatusFilter}
             onChange={(e) => setPaymentStatusFilter(e.target.value)}
-            className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={`${fieldClass} h-10 lg:w-48`}
           >
             <option value="">All Payment Statuses</option>
             <option value="Paid">Paid</option>
@@ -268,19 +267,18 @@ export const BookingsManagePage = () => {
           <button
             type="button"
             onClick={() => setRescheduleOnlyFilter(!rescheduleOnlyFilter)}
-            className={`h-10 px-3.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-colors border ${
-              rescheduleOnlyFilter
-                ? 'bg-amber-500 text-white border-amber-600 shadow-sm'
-                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-            }`}
+            aria-pressed={rescheduleOnlyFilter}
+            className={`inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md border px-3.5 sm:col-span-2 text-sm font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${rescheduleOnlyFilter
+                ? 'border-amber-300 bg-amber-50 text-amber-900'
+                : 'border-input bg-card text-slate-700 hover:bg-slate-50'
+              }`}
           >
-            <Clock className="h-3.5 w-3.5" />
+            <Clock className="h-4 w-4" />
             <span>Reschedule Requests</span>
             {pendingRescheduleCount > 0 && (
               <span
-                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                  rescheduleOnlyFilter ? 'bg-amber-700 text-white' : 'bg-amber-100 text-amber-800'
-                }`}
+                className={`rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums ${rescheduleOnlyFilter ? 'bg-amber-200 text-amber-900' : 'bg-amber-100 text-amber-800'
+                  }`}
               >
                 {pendingRescheduleCount}
               </span>
@@ -291,22 +289,22 @@ export const BookingsManagePage = () => {
 
       {/* Error Banner */}
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-center gap-2">
-          <AlertCircle className="h-4 w-4 shrink-0" />
+        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Bookings Table */}
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <Table>
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <Table className="min-w-[980px]">
           <TableHeader>
             <TableRow>
               <TableHead>Reference & Date</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Package</TableHead>
               <TableHead>Departure</TableHead>
-              <TableHead>Travelers & Total</TableHead>
+              <TableHead className="text-right">Travelers & Total</TableHead>
               <TableHead>Statuses</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -314,14 +312,14 @@ export const BookingsManagePage = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-40 text-center text-slate-400">
-                  <RefreshCw className="mx-auto h-6 w-6 animate-spin text-emerald-600 mb-2" />
+                <TableCell colSpan={7} className="h-40 text-center text-muted-foreground">
+                  <RefreshCw className="mx-auto mb-2 h-5 w-5 animate-spin text-slate-400" />
                   Loading customer reservations...
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-40 text-center text-slate-400">
+                <TableCell colSpan={7} className="h-40 text-center text-muted-foreground">
                   No reservations found matching your search.
                 </TableCell>
               </TableRow>
@@ -329,49 +327,48 @@ export const BookingsManagePage = () => {
               filtered.map((b) => (
                 <TableRow key={b.id}>
                   <TableCell>
-                    <div className="font-mono font-bold text-slate-900 text-xs">
+                    <div className="whitespace-nowrap font-mono text-xs font-medium text-foreground">
                       {b.bookingReference}
                     </div>
-                    <div className="text-[11px] text-slate-400">
+                    <div className="mt-0.5 text-xs tabular-nums text-muted-foreground">
                       {(b.createdAt || '').substring(0, 10)}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="font-semibold text-slate-900 text-sm">
+                    <div className="font-medium text-foreground">
                       {b.customerName}
                     </div>
-                    <div className="text-xs text-slate-500">{b.customerEmail}</div>
+                    <div className="text-xs text-muted-foreground">{b.customerEmail}</div>
                   </TableCell>
-                  <TableCell className="text-sm font-medium text-slate-800">
+                  <TableCell className="text-slate-700">
                     {b.packageName}
                   </TableCell>
-                  <TableCell className="text-sm text-slate-700">
-                    <div className="flex items-center gap-1.5 font-medium">
+                  <TableCell>
+                    <div className="flex items-center gap-1.5 whitespace-nowrap tabular-nums text-slate-700">
                       <Calendar className="h-3.5 w-3.5 text-slate-400" />
                       {b.departureDate}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="font-bold text-slate-900 text-sm">
+                  <TableCell className="text-right">
+                    <div className="whitespace-nowrap font-medium tabular-nums text-foreground">
                       {formatPHP(b.totalPrice)}
                     </div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-muted-foreground">
                       {b.numberOfTravelers} guest{b.numberOfTravelers === 1 ? '' : 's'}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-col gap-1 items-start">
+                    <div className="flex flex-col items-start gap-1">
                       <Badge
                         variant={
                           b.bookingStatus === 'Confirmed'
                             ? 'success'
                             : b.bookingStatus === 'Pending'
-                            ? 'warning'
-                            : b.bookingStatus === 'Completed'
-                            ? 'info'
-                            : 'destructive'
+                              ? 'warning'
+                              : b.bookingStatus === 'Completed'
+                                ? 'info'
+                                : 'destructive'
                         }
-                        className="text-[10px] px-1.5 py-0"
                       >
                         {b.bookingStatus}
                       </Badge>
@@ -380,25 +377,22 @@ export const BookingsManagePage = () => {
                           b.paymentStatus === 'Paid'
                             ? 'outline'
                             : b.paymentStatus === 'Refunded'
-                            ? 'secondary'
-                            : 'warning'
+                              ? 'secondary'
+                              : b.paymentStatus === 'Failed'
+                                ? 'destructive'
+                                : 'warning'
                         }
-                        className="text-[10px] px-1.5 py-0 font-medium"
                       >
                         Pay: {b.paymentStatus}
                       </Badge>
                       {b.cancellationRequested && b.bookingStatus !== 'Cancelled' && (
-                        <Badge variant="destructive" className="text-[9px] px-1 py-0">
-                          Review Req.
-                        </Badge>
+                        <Badge variant="destructive">Review Req.</Badge>
                       )}
                       {b.rescheduleRequest?.status === 'pending' && (
-                        <Badge className="bg-amber-100 text-amber-900 border border-amber-300 text-[9px] px-1 py-0 font-bold">
-                          Reschedule Req.
-                        </Badge>
+                        <Badge variant="warning">Reschedule Req.</Badge>
                       )}
                       {b.rescheduleRequest?.status === 'approved' && (
-                        <Badge variant="outline" className="text-[9px] px-1 py-0 text-slate-500">
+                        <Badge variant="outline" className="text-slate-500">
                           Rescheduled
                         </Badge>
                       )}
@@ -406,10 +400,10 @@ export const BookingsManagePage = () => {
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
                       onClick={() => openBookingModal(b)}
-                      className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 flex items-center gap-1 ml-auto"
+                      className="h-8"
                     >
                       <Eye className="h-3.5 w-3.5" />
                       Details
@@ -427,39 +421,35 @@ export const BookingsManagePage = () => {
         open={Boolean(selectedBooking)}
         onOpenChange={(open) => !open && setSelectedBooking(null)}
       >
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <DialogTitle className="text-lg font-bold flex items-center gap-2">
-                  <Ticket className="h-5 w-5 text-emerald-600" />
-                  Booking {selectedBooking?.bookingReference}
-                </DialogTitle>
-                <DialogDescription className="text-xs">
-                  Created on {(selectedBooking?.createdAt || '').substring(0, 10)} &bull; Customer UID: {selectedBooking?.customerId}
-                </DialogDescription>
-              </div>
-            </div>
+            <DialogTitle className="flex items-center gap-2">
+              <Ticket className="h-5 w-5 text-primary" />
+              Booking <span className="font-mono">{selectedBooking?.bookingReference}</span>
+            </DialogTitle>
+            <DialogDescription className="break-all">
+              Created on {(selectedBooking?.createdAt || '').substring(0, 10)} &bull; Customer UID: {selectedBooking?.customerId}
+            </DialogDescription>
           </DialogHeader>
 
           {loadingDetails ? (
-            <div className="py-12 text-center text-slate-400">
-              <RefreshCw className="mx-auto h-6 w-6 animate-spin text-emerald-600 mb-2" />
+            <div className="py-12 text-center text-sm text-muted-foreground">
+              <RefreshCw className="mx-auto mb-2 h-5 w-5 animate-spin text-slate-400" />
               Loading complete booking dossier...
             </div>
           ) : (
-            <div className="space-y-5 py-2">
+            <div className="space-y-6">
               {/* Cancellation Exception Request Alert */}
               {bookingDetails?.cancellationRequested && (
-                <div className="rounded-lg border border-amber-300 bg-amber-50 p-3.5 text-xs text-amber-900 space-y-1">
-                  <div className="font-bold flex items-center gap-1.5 text-amber-800">
-                    <AlertCircle className="h-4 w-4" />
+                <div className="space-y-1.5 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  <div className="flex items-center gap-2 font-medium">
+                    <AlertCircle className="h-4 w-4 text-amber-600" />
                     Customer Requested Cancellation Review
                   </div>
                   <div>
-                    <strong>Customer Reason:</strong> {bookingDetails.cancellationRequestReason || 'No reason specified'}
+                    <strong className="font-medium">Customer Reason:</strong> {bookingDetails.cancellationRequestReason || 'No reason specified'}
                   </div>
-                  <div className="text-[11px] text-amber-700">
+                  <div className="text-xs text-amber-800">
                     Window: Departed in {bookingDetails.cancellationDaysRemaining} day(s), cutoff was {bookingDetails.cancellationCutoffDays} days. Exception review required.
                   </div>
                 </div>
@@ -467,56 +457,53 @@ export const BookingsManagePage = () => {
 
               {/* Reschedule Request Review Card */}
               {bookingDetails?.rescheduleRequest?.status === 'pending' && (
-                <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="font-bold flex items-center gap-1.5 text-amber-900 text-sm">
-                      <Calendar className="h-4 w-4 text-amber-700" />
+                <div className="space-y-4 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 font-medium text-amber-900">
+                      <Calendar className="h-4 w-4 text-amber-600" />
                       Customer Requested Departure Reschedule
                     </div>
-                    <Badge className="bg-amber-200 text-amber-900 text-[10px] font-bold">
-                      Pending Action
-                    </Badge>
+                    <Badge variant="warning">Pending Action</Badge>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 bg-white/90 rounded-lg p-3 border border-amber-200/60">
-                    <div>
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                  <div className="grid grid-cols-1 gap-px overflow-hidden rounded-md border border-amber-200 bg-amber-200 sm:grid-cols-2">
+                    <div className="bg-card p-3">
+                      <span className={`block ${sectionLabel}`}>
                         Current Departure
                       </span>
-                      <p className="font-bold text-slate-800 mt-0.5">
+                      <p className="mt-1 font-medium tabular-nums text-foreground">
                         {bookingDetails.departureDate} ({bookingDetails.departureTime || '07:00 AM'})
                       </p>
-                      <p className="text-[11px] text-slate-500 truncate" title={bookingDetails.meetingPoint}>
+                      <p className="truncate text-xs text-muted-foreground" title={bookingDetails.meetingPoint}>
                         {bookingDetails.meetingPoint || 'Port Terminal'}
                       </p>
                     </div>
-                    <div>
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 block">
+                    <div className="bg-card p-3">
+                      <span className="block text-xs font-medium uppercase tracking-wide text-emerald-700">
                         Requested Target Departure
                       </span>
-                      <p className="font-bold text-emerald-900 mt-0.5">
+                      <p className="mt-1 font-medium tabular-nums text-foreground">
                         {bookingDetails.rescheduleRequest.targetDepartureDate} ({bookingDetails.rescheduleRequest.targetDepartureTime || '07:00 AM'})
                       </p>
-                      <p className="text-[11px] text-emerald-700 truncate" title={bookingDetails.rescheduleRequest.targetMeetingPoint}>
+                      <p className="truncate text-xs text-muted-foreground" title={bookingDetails.rescheduleRequest.targetMeetingPoint}>
                         {bookingDetails.rescheduleRequest.targetMeetingPoint || 'Port Terminal'}
                       </p>
                     </div>
                   </div>
 
                   {bookingDetails.rescheduleRequest.reason && (
-                    <div className="bg-white/90 rounded-lg p-2.5 border border-amber-200/60 text-slate-700">
-                      <span className="font-semibold text-slate-900">Traveler Reason: </span>
+                    <div className="rounded-md border border-amber-200 bg-card px-3 py-2.5 text-slate-700">
+                      <span className="font-medium text-foreground">Traveler Reason: </span>
                       <span>"{bookingDetails.rescheduleRequest.reason}"</span>
                     </div>
                   )}
 
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 text-[11px]">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <span
-                      className={
-                        bookingDetails.rescheduleRequest.withinCutoff
-                          ? 'text-emerald-700 font-semibold'
-                          : 'text-amber-800 font-semibold'
-                      }
+                      className={`text-xs font-medium ${bookingDetails.rescheduleRequest.withinCutoff
+                          ? 'text-emerald-700'
+                          : 'text-amber-800'
+                        }`}
                     >
                       Policy Window:{' '}
                       {bookingDetails.rescheduleRequest.withinCutoff
@@ -524,13 +511,14 @@ export const BookingsManagePage = () => {
                         : `Submitted past ${bookingDetails.rescheduleRequest.cutoffDays || 7}-day cutoff (${bookingDetails.rescheduleRequest.daysRemaining} days left)`}
                     </span>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
                       <Button
                         type="button"
                         size="sm"
+                        variant="outline"
                         disabled={moderatingReschedule}
                         onClick={() => handleRejectReschedule(selectedBooking.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white text-xs h-8 px-3"
+                        className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
                       >
                         Reject Request
                       </Button>
@@ -539,7 +527,6 @@ export const BookingsManagePage = () => {
                         size="sm"
                         disabled={moderatingReschedule}
                         onClick={() => handleApproveReschedule(selectedBooking.id)}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8 px-3 shadow-sm font-semibold"
                       >
                         {moderatingReschedule ? 'Processing...' : 'Approve Reschedule'}
                       </Button>
@@ -549,112 +536,112 @@ export const BookingsManagePage = () => {
               )}
 
               {/* Customer and Trip Grid */}
-              <div className="grid grid-cols-2 gap-4 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+              <div className="grid grid-cols-1 gap-px overflow-hidden rounded-md border border-border bg-border md:grid-cols-2">
+                <div className="bg-card p-4">
+                  <h4 className={`mb-3 ${sectionLabel}`}>
                     Customer Information
                   </h4>
-                  <div className="space-y-1 text-xs">
-                    <div>
-                      <span className="text-slate-500">Name:</span>{' '}
-                      <span className="font-semibold text-slate-900">{bookingDetails?.customerName}</span>
+                  <dl className="space-y-2 text-sm">
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-muted-foreground">Name:</dt>{' '}
+                      <dd className="text-right font-medium text-foreground">{bookingDetails?.customerName}</dd>
                     </div>
-                    <div>
-                      <span className="text-slate-500">Email:</span>{' '}
-                      <span className="font-semibold text-slate-900">{bookingDetails?.customerEmail}</span>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-muted-foreground">Email:</dt>{' '}
+                      <dd className="break-all text-right font-medium text-foreground">{bookingDetails?.customerEmail}</dd>
                     </div>
-                    <div>
-                      <span className="text-slate-500">Phone:</span>{' '}
-                      <span className="font-semibold text-slate-900">{bookingDetails?.customerPhone || 'N/A'}</span>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-muted-foreground">Phone:</dt>{' '}
+                      <dd className="text-right font-medium tabular-nums text-foreground">{bookingDetails?.customerPhone || 'N/A'}</dd>
                     </div>
-                    <div>
-                      <span className="text-slate-500">Special Notes:</span>{' '}
-                      <span className="text-slate-800">{bookingDetails?.specialRequests || 'None'}</span>
+                    <div className="flex justify-between gap-4">
+                      <dt className="shrink-0 text-muted-foreground">Special Notes:</dt>{' '}
+                      <dd className="text-right text-slate-700">{bookingDetails?.specialRequests || 'None'}</dd>
                     </div>
-                  </div>
+                  </dl>
                 </div>
 
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                <div className="bg-card p-4">
+                  <h4 className={`mb-3 ${sectionLabel}`}>
                     Tour & Financial
                   </h4>
-                  <div className="space-y-1 text-xs">
-                    <div>
-                      <span className="text-slate-500">Tour Package:</span>{' '}
-                      <span className="font-semibold text-slate-900">{bookingDetails?.packageName}</span>
+                  <dl className="space-y-2 text-sm">
+                    <div className="flex justify-between gap-4">
+                      <dt className="shrink-0 text-muted-foreground">Tour Package:</dt>{' '}
+                      <dd className="text-right font-medium text-foreground">{bookingDetails?.packageName}</dd>
                     </div>
-                    <div>
-                      <span className="text-slate-500">Departure Date:</span>{' '}
-                      <span className="font-semibold text-slate-900">{bookingDetails?.departureDate}</span>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-muted-foreground">Departure Date:</dt>{' '}
+                      <dd className="text-right font-medium tabular-nums text-foreground">{bookingDetails?.departureDate}</dd>
                     </div>
-                    <div>
-                      <span className="text-slate-500">Travelers:</span>{' '}
-                      <span className="font-semibold text-slate-900">{bookingDetails?.numberOfTravelers} guest(s)</span>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-muted-foreground">Travelers:</dt>{' '}
+                      <dd className="text-right font-medium text-foreground">{bookingDetails?.numberOfTravelers} guest(s)</dd>
                     </div>
-                    <div>
-                      <span className="text-slate-500">Total Price:</span>{' '}
-                      <span className="font-bold text-emerald-700 text-sm">{formatPHP(bookingDetails?.totalPrice)}</span>
+                    <div className="flex justify-between gap-4 border-t border-border pt-2">
+                      <dt className="text-muted-foreground">Total Price:</dt>{' '}
+                      <dd className="text-right text-base font-semibold tabular-nums text-foreground">{formatPHP(bookingDetails?.totalPrice)}</dd>
                     </div>
-                  </div>
+                  </dl>
                 </div>
               </div>
 
               {/* Traveler Manifest List */}
               {bookingDetails?.travelerManifest && bookingDetails.travelerManifest.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  <h4 className={sectionLabel}>
                     Traveler Manifest
                   </h4>
-                  <div className="space-y-1.5">
+                  <ul className="divide-y divide-border rounded-md border border-border">
                     {bookingDetails.travelerManifest.map((t, idx) => (
-                      <div
+                      <li
                         key={idx}
-                        className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-2.5 text-xs"
+                        className="flex flex-col gap-1.5 px-3 py-2.5 text-sm sm:flex-row sm:items-center sm:justify-between"
                       >
                         <div>
-                          <span className="font-bold text-slate-800">
+                          <span className="font-medium text-foreground">
                             {idx + 1}. {t.fullName || 'Traveler'}
                           </span>
-                          <span className="ml-2 text-slate-400">
+                          <span className="ml-2 text-muted-foreground">
                             ({t.relationship || 'Traveler'})
                           </span>
                         </div>
-                        <div className="text-slate-500">
+                        <div className="text-xs text-muted-foreground">
                           {t.dietaryOrMedicalNotes ? (
-                            <Badge variant="outline" className="text-[10px]">
+                            <Badge variant="warning">
                               Diet: {t.dietaryOrMedicalNotes}
                             </Badge>
                           ) : (
                             'No dietary notes'
                           )}
                         </div>
-                      </div>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 </div>
               )}
 
               {/* Support Staff Internal Notes Timeline */}
               <div className="space-y-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                <h4 className={sectionLabel}>
                   Internal Support Notes Timeline
                 </h4>
                 {(!bookingDetails?.internalNotes || bookingDetails.internalNotes.length === 0) ? (
-                  <div className="rounded-lg border border-dashed border-slate-200 p-3 text-center text-xs text-slate-400">
+                  <div className="rounded-md border border-dashed border-border px-3 py-4 text-center text-sm text-muted-foreground">
                     No internal support notes logged yet.
                   </div>
                 ) : (
-                  <div className="space-y-2 max-h-36 overflow-y-auto">
+                  <div className="max-h-48 space-y-2 overflow-y-auto pr-1">
                     {bookingDetails.internalNotes.map((n, i) => (
                       <div
                         key={i}
-                        className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-xs"
+                        className="rounded-md border border-border bg-slate-50 px-3 py-2 text-sm"
                       >
-                        <div className="flex items-center justify-between text-slate-400 text-[10px] mb-1">
-                          <span className="font-semibold text-slate-600">
+                        <div className="mb-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                          <span className="font-medium text-slate-700">
                             {n.authorName || 'Staff'}
                           </span>
-                          <span>{(n.timestamp || '').substring(0, 16).replace('T', ' ')}</span>
+                          <span className="tabular-nums">{(n.timestamp || '').substring(0, 16).replace('T', ' ')}</span>
                         </div>
                         <p className="text-slate-800">{n.note}</p>
                       </div>
@@ -664,14 +651,14 @@ export const BookingsManagePage = () => {
               </div>
 
               {/* Support Action Form: Status, Reschedule, Add Note */}
-              <form onSubmit={handleSaveSupportUpdates} className="space-y-4 pt-3 border-t border-slate-200">
-                <div className="grid grid-cols-2 gap-4">
+              <form onSubmit={handleSaveSupportUpdates} className="space-y-5 border-t border-border pt-5">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Booking Status</Label>
+                    <Label>Booking Status</Label>
                     <select
                       value={editBookingStatus}
                       onChange={(e) => setEditBookingStatus(e.target.value)}
-                      className="h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className={`${fieldClass} h-10`}
                     >
                       <option value="Confirmed">Confirmed</option>
                       <option value="Pending">Pending</option>
@@ -681,11 +668,11 @@ export const BookingsManagePage = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Payment Status</Label>
+                    <Label>Payment Status</Label>
                     <select
                       value={editPaymentStatus}
                       onChange={(e) => setEditPaymentStatus(e.target.value)}
-                      className="h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className={`${fieldClass} h-10`}
                     >
                       <option value="Paid">Paid</option>
                       <option value="Pending">Pending</option>
@@ -698,14 +685,14 @@ export const BookingsManagePage = () => {
                 {/* Reschedule departure */}
                 {departures.length > 0 && (
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold flex items-center gap-1.5">
-                      <Clock className="h-3.5 w-3.5 text-blue-600" />
+                    <Label className="flex items-center gap-1.5">
+                      <Clock className="h-4 w-4 text-slate-400" />
                       Reschedule to New Departure Date
                     </Label>
                     <select
                       value={rescheduleDepId}
                       onChange={(e) => setRescheduleDepId(e.target.value)}
-                      className="h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className={`${fieldClass} h-10`}
                     >
                       <option value="">-- Keep Current Departure ({bookingDetails?.departureDate}) --</option>
                       {departures.map((d) => (
@@ -719,20 +706,20 @@ export const BookingsManagePage = () => {
 
                 {/* Append note */}
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold flex items-center gap-1.5">
-                    <MessageSquare className="h-3.5 w-3.5 text-slate-500" />
+                  <Label className="flex items-center gap-1.5">
+                    <MessageSquare className="h-4 w-4 text-slate-400" />
                     Append Internal Note
                   </Label>
                   <textarea
-                    rows={2}
+                    rows={3}
                     placeholder="Log conversation with customer, special handling, or approval remarks..."
                     value={newInternalNote}
                     onChange={(e) => setNewInternalNote(e.target.value)}
-                    className="w-full rounded-md border border-slate-200 bg-white p-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className={`${fieldClass} resize-y`}
                   />
                 </div>
 
-                <DialogFooter className="pt-2">
+                <DialogFooter>
                   <Button
                     type="button"
                     variant="outline"
@@ -740,11 +727,7 @@ export const BookingsManagePage = () => {
                   >
                     Close
                   </Button>
-                  <Button
-                    type="submit"
-                    disabled={updating}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
-                  >
+                  <Button type="submit" disabled={updating}>
                     {updating ? 'Saving Changes...' : 'Save Support Changes'}
                   </Button>
                 </DialogFooter>

@@ -35,6 +35,11 @@ import {
   Loader2,
 } from 'lucide-react';
 
+const tabClass = (isActive) =>
+  `inline-flex shrink-0 items-center rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors cursor-pointer ${
+    isActive ? 'bg-forest text-white' : 'text-slate-600 hover:bg-sage-soft hover:text-forest'
+  }`;
+
 export const ReviewsModeratePage = () => {
   const { role } = useStaffAuth();
   const [reviews, setReviews] = useState([]);
@@ -173,12 +178,12 @@ export const ReviewsModeratePage = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-heading">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             Customer Reviews & Ratings
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="mt-1 text-sm text-muted-foreground">
             Audit, moderate, and publish traveler reviews. Complies with Rule D: Only travelers with completed bookings can review.
           </p>
         </div>
@@ -186,9 +191,8 @@ export const ReviewsModeratePage = () => {
         <Button
           onClick={fetchReviews}
           variant="outline"
-          size="sm"
           disabled={loading}
-          className="gap-2 shrink-0 self-start sm:self-auto cursor-pointer"
+          className="w-full shrink-0 sm:w-auto"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -197,63 +201,73 @@ export const ReviewsModeratePage = () => {
 
       {/* Notifications */}
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 text-sm rounded-xl border border-red-200">
-          <AlertTriangle className="h-4 w-4 shrink-0" />
+        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {successMsg && (
-        <div className="flex items-center gap-2 p-3 bg-emerald-50 text-emerald-800 text-sm rounded-xl border border-emerald-200">
-          <CheckCircle className="h-4 w-4 shrink-0" />
+        <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          <CheckCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-lg border border-border bg-card p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Total Reviews</span>
-            <MessageSquare className="h-4 w-4 text-slate-400" />
+            <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Total Reviews</span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-100 text-slate-500">
+              <MessageSquare className="h-4 w-4" />
+            </span>
           </div>
-          <div className="text-2xl font-black text-slate-900 mt-2 font-heading">{totalReviews}</div>
-          <span className="text-[11px] text-slate-400">All submitted feedback</span>
+          <div className="mt-3 font-heading text-[2.5rem] font-normal leading-none tracking-normal tabular-nums text-foreground">{totalReviews}</div>
+          <span className="text-xs text-muted-foreground">All submitted feedback</span>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-lg border border-border bg-card p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-emerald-600">Approved (Live)</span>
-            <CheckCircle className="h-4 w-4 text-emerald-500" />
+            <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Approved (Live)</span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-50 text-emerald-600">
+              <CheckCircle className="h-4 w-4" />
+            </span>
           </div>
-          <div className="text-2xl font-black text-emerald-700 mt-2 font-heading">{approvedCount}</div>
-          <span className="text-[11px] text-emerald-600/80">Visible on public catalog</span>
+          <div className="mt-3 font-heading text-[2.5rem] font-normal leading-none tracking-normal tabular-nums text-foreground">{approvedCount}</div>
+          <span className="text-xs text-muted-foreground">Visible on public catalog</span>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-lg border border-border bg-card p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-amber-600">Average Rating</span>
-            <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+            <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Average Rating</span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-amber-50">
+              <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+            </span>
           </div>
-          <div className="text-2xl font-black text-amber-600 mt-2 font-heading">{avgRating} / 5.0</div>
-          <span className="text-[11px] text-slate-400">Approved reviews average</span>
+          <div className="mt-3 font-heading text-[2.5rem] font-normal leading-none tracking-normal tabular-nums text-foreground">
+            {avgRating} <span className="text-base font-normal text-muted-foreground">/ 5.0</span>
+          </div>
+          <span className="text-xs text-muted-foreground">Approved reviews average</span>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-lg border border-border bg-card p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-red-600">Hidden / Flagged</span>
-            <ShieldAlert className="h-4 w-4 text-red-500" />
+            <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Hidden / Flagged</span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-red-50 text-red-600">
+              <ShieldAlert className="h-4 w-4" />
+            </span>
           </div>
-          <div className="text-2xl font-black text-red-700 mt-2 font-heading">
+          <div className="mt-3 font-heading text-[2.5rem] font-normal leading-none tracking-normal tabular-nums text-foreground">
             {hiddenCount} / {flaggedCount}
           </div>
-          <span className="text-[11px] text-slate-400">{hiddenCount} hidden, {flaggedCount} flagged</span>
+          <span className="text-xs text-muted-foreground">{hiddenCount} hidden, {flaggedCount} flagged</span>
         </div>
       </div>
 
       {/* Filters and Search Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex max-w-full items-center gap-1 overflow-x-auto rounded-full border border-border bg-sand-head p-1">
           {[
             { key: 'all', label: `All (${totalReviews})` },
             { key: 'approved', label: `Approved (${approvedCount})` },
@@ -263,231 +277,216 @@ export const ReviewsModeratePage = () => {
             <button
               key={tab.key}
               onClick={() => setStatusFilter(tab.key)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer shrink-0 ${
-                statusFilter === tab.key
-                  ? 'bg-slate-900 text-white'
-                  : 'text-slate-600 hover:bg-slate-100'
-              }`}
+              className={tabClass(statusFilter === tab.key)}
             >
               {tab.label}
             </button>
           ))}
         </div>
 
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+        <div className="relative w-full lg:w-80">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             placeholder="Search package, customer, comment..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-9 text-xs"
+            className="pl-9"
           />
         </div>
       </div>
 
       {/* Reviews Table */}
-      <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+            <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
           </div>
         ) : filteredReviews.length === 0 ? (
-          <div className="text-center py-16 px-4">
-            <MessageSquare className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-            <h3 className="text-sm font-bold text-slate-700">No reviews found</h3>
-            <p className="text-xs text-slate-400 mt-1">
+          <div className="px-4 py-16 text-center">
+            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-slate-100">
+              <MessageSquare className="h-5 w-5 text-slate-400" />
+            </div>
+            <h3 className="text-sm font-medium text-foreground">No reviews found</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
               {search ? 'Try clearing your search query.' : 'No customer reviews submitted in this category.'}
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-slate-50/70">
-                  <TableHead className="text-xs font-bold text-slate-700">Tour Package</TableHead>
-                  <TableHead className="text-xs font-bold text-slate-700">Customer & Booking</TableHead>
-                  <TableHead className="text-xs font-bold text-slate-700">Rating</TableHead>
-                  <TableHead className="text-xs font-bold text-slate-700 w-1/3">Feedback / Comment</TableHead>
-                  <TableHead className="text-xs font-bold text-slate-700">Status</TableHead>
-                  <TableHead className="text-xs font-bold text-slate-700 text-right">Moderation Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredReviews.map((rev) => {
-                  const isUpdating = updatingId === rev.id;
+          <Table className="min-w-[1000px]">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tour Package</TableHead>
+                <TableHead>Customer & Booking</TableHead>
+                <TableHead>Rating</TableHead>
+                <TableHead className="w-1/3">Feedback / Comment</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Moderation Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredReviews.map((rev) => {
+                const isUpdating = updatingId === rev.id;
 
-                  return (
-                    <TableRow key={rev.id} className="hover:bg-slate-50/50">
-                      {/* Tour Package */}
-                      <TableCell className="font-medium text-slate-900 text-xs">
-                        <div className="font-bold">{rev.packageName || 'Tour Package'}</div>
-                        <span className="text-[11px] text-slate-400">ID: {rev.packageId?.slice(0, 8)}...</span>
-                      </TableCell>
+                return (
+                  <TableRow key={rev.id} className="align-top">
+                    {/* Tour Package */}
+                    <TableCell className="align-top">
+                      <div className="font-medium text-foreground">{rev.packageName || 'Tour Package'}</div>
+                      <span className="font-mono text-[11px] text-muted-foreground">ID: {rev.packageId?.slice(0, 8)}...</span>
+                    </TableCell>
 
-                      {/* Customer & Booking */}
-                      <TableCell className="text-xs">
-                        <div className="font-semibold text-slate-800">{rev.customerName || 'Verified Traveler'}</div>
-                        <div className="text-[11px] text-slate-500 font-mono">
-                          Ref: {rev.bookingReference || rev.bookingId?.slice(0, 8) || 'N/A'}
+                    {/* Customer & Booking */}
+                    <TableCell className="align-top">
+                      <div className="font-medium text-slate-800">{rev.customerName || 'Verified Traveler'}</div>
+                      <div className="font-mono text-xs text-muted-foreground">
+                        Ref: {rev.bookingReference || rev.bookingId?.slice(0, 8) || 'N/A'}
+                      </div>
+                      <div className="mt-0.5 text-xs tabular-nums text-muted-foreground">
+                        {rev.createdAt ? new Date(rev.createdAt).toLocaleDateString() : 'N/A'}
+                      </div>
+                    </TableCell>
+
+                    {/* Rating */}
+                    <TableCell className="align-top">
+                      <div className="flex items-center gap-1.5">
+                        <div className="flex items-center">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star
+                              key={s}
+                              className={`h-3.5 w-3.5 ${
+                                s <= rev.rating ? 'fill-amber-400 text-amber-400' : 'fill-slate-100 text-slate-200'
+                              }`}
+                            />
+                          ))}
                         </div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">
-                          {rev.createdAt ? new Date(rev.createdAt).toLocaleDateString() : 'N/A'}
-                        </div>
-                      </TableCell>
+                        <span className="font-medium tabular-nums text-foreground">{rev.rating}</span>
+                      </div>
+                    </TableCell>
 
-                      {/* Rating */}
-                      <TableCell className="text-xs">
-                        <div className="flex items-center gap-1">
-                          <div className="flex items-center">
-                            {[1, 2, 3, 4, 5].map((s) => (
-                              <Star
-                                key={s}
-                                className={`h-3.5 w-3.5 ${
-                                  s <= rev.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-200'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                          <span className="font-bold text-slate-800 ml-1">{rev.rating}</span>
-                        </div>
-                      </TableCell>
+                    {/* Comment */}
+                    <TableCell className="align-top text-slate-700">
+                      {rev.comment ? (
+                        <p className="whitespace-pre-wrap leading-relaxed">{rev.comment}</p>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">No written comment provided</span>
+                      )}
+                    </TableCell>
 
-                      {/* Comment */}
-                      <TableCell className="text-xs text-slate-700">
-                        {rev.comment ? (
-                          <p className="leading-relaxed whitespace-pre-wrap">{rev.comment}</p>
+                    {/* Status */}
+                    <TableCell className="align-top">
+                      <div className="flex flex-col items-start gap-1">
+                        {rev.isApproved ? (
+                          <Badge variant="success">Approved (Live)</Badge>
                         ) : (
-                          <span className="text-slate-400 italic">No written comment provided</span>
+                          <Badge variant="secondary">Hidden</Badge>
                         )}
-                      </TableCell>
 
-                      {/* Status */}
-                      <TableCell className="text-xs">
-                        <div className="flex flex-col gap-1 items-start">
-                          {rev.isApproved ? (
-                            <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-none font-semibold text-[10px]">
-                              Approved (Live)
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-slate-200 text-slate-700 hover:bg-slate-200 border-none font-semibold text-[10px]">
-                              Hidden
-                            </Badge>
-                          )}
+                        {rev.isFlagged && (
+                          <Badge variant="destructive">
+                            <Flag className="h-3 w-3 fill-red-600 text-red-600" /> Flagged
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
 
-                          {rev.isFlagged && (
-                            <Badge className="bg-red-100 text-red-800 hover:bg-red-100 border-none font-semibold text-[10px] flex items-center gap-1">
-                              <Flag className="h-2.5 w-2.5 fill-red-600 text-red-600" /> Flagged
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-
-                      {/* Moderation Actions */}
-                      <TableCell className="text-xs text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {canModerate && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={isUpdating}
-                                onClick={() => handleToggleApproval(rev)}
-                                title={rev.isApproved ? 'Hide Review' : 'Approve & Publish'}
-                                className="h-8 text-[11px] font-semibold cursor-pointer"
-                              >
-                                {isUpdating ? (
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : rev.isApproved ? (
-                                  <>
-                                    <EyeOff className="h-3.5 w-3.5 mr-1 text-slate-500" />
-                                    Hide
-                                  </>
-                                ) : (
-                                  <>
-                                    <Eye className="h-3.5 w-3.5 mr-1 text-emerald-600" />
-                                    Approve
-                                  </>
-                                )}
-                              </Button>
-
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={isUpdating}
-                                onClick={() => handleToggleFlag(rev)}
-                                title={rev.isFlagged ? 'Remove Flag' : 'Flag for Inspection'}
-                                className={`h-8 text-[11px] cursor-pointer ${
-                                  rev.isFlagged ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' : ''
-                                }`}
-                              >
-                                <Flag className={`h-3.5 w-3.5 ${rev.isFlagged ? 'fill-red-600 text-red-600' : 'text-slate-400'}`} />
-                              </Button>
-                            </>
-                          )}
-
-                          {canDelete && (
+                    {/* Moderation Actions */}
+                    <TableCell className="align-top text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {canModerate && (
+                          <>
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => setReviewToDelete(rev)}
-                              className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 cursor-pointer"
-                              title="Delete Review Permanently"
+                              disabled={isUpdating}
+                              onClick={() => handleToggleApproval(rev)}
+                              title={rev.isApproved ? 'Hide Review' : 'Approve & Publish'}
+                              className="h-8 px-2.5 text-xs"
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
+                              {isUpdating ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : rev.isApproved ? (
+                                <>
+                                  <EyeOff className="h-3.5 w-3.5 text-slate-500" />
+                                  Hide
+                                </>
+                              ) : (
+                                <>
+                                  <Eye className="h-3.5 w-3.5 text-emerald-600" />
+                                  Approve
+                                </>
+                              )}
                             </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              disabled={isUpdating}
+                              onClick={() => handleToggleFlag(rev)}
+                              title={rev.isFlagged ? 'Remove Flag' : 'Flag for Inspection'}
+                              className={`h-8 w-8 ${
+                                rev.isFlagged ? 'border-red-200 bg-red-50 hover:bg-red-100' : ''
+                              }`}
+                            >
+                              <Flag className={`h-3.5 w-3.5 ${rev.isFlagged ? 'fill-red-600 text-red-600' : 'text-slate-400'}`} />
+                            </Button>
+                          </>
+                        )}
+
+                        {canDelete && (
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            onClick={() => setReviewToDelete(rev)}
+                            className="h-8 w-8 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                            title="Delete Review Permanently"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         )}
       </div>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!reviewToDelete} onOpenChange={(open) => !open && setReviewToDelete(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-red-700 flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-600" />
               Delete Customer Review
             </DialogTitle>
-            <DialogDescription className="text-xs text-slate-600 pt-2 leading-relaxed">
+            <DialogDescription className="pt-1">
               Are you sure you want to permanently delete this review for{' '}
-              <strong className="text-slate-900">{reviewToDelete?.packageName}</strong> submitted by{' '}
-              <strong className="text-slate-900">{reviewToDelete?.customerName}</strong>?
+              <strong className="font-medium text-foreground">{reviewToDelete?.packageName}</strong> submitted by{' '}
+              <strong className="font-medium text-foreground">{reviewToDelete?.customerName}</strong>?
               <br />
               <br />
               This will remove the review document and automatically recalculate the tour package's average rating and total review count. This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
 
-          <DialogFooter className="gap-2 sm:gap-0 mt-4">
+          <DialogFooter>
             <Button
               variant="outline"
-              size="sm"
               onClick={() => setReviewToDelete(null)}
               disabled={isDeleting}
             >
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleDeleteConfirm}
-              disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700 text-white gap-1.5"
-            >
+            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={isDeleting}>
               {isDeleting ? (
                 <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Deleting...
+                  <Loader2 className="h-4 w-4 animate-spin" /> Deleting...
                 </>
               ) : (
                 <>
-                  <Trash2 className="h-3.5 w-3.5" /> Delete Permanently
+                  <Trash2 className="h-4 w-4" /> Delete Permanently
                 </>
               )}
             </Button>

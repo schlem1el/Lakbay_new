@@ -38,6 +38,11 @@ import {
 const CATEGORIES = ['Island', 'Beach', 'Mountain', 'Cultural', 'Heritage', 'Nature', 'Urban'];
 const REGIONS = ['Luzon', 'Visayas', 'Mindanao', 'MIMAROPA', 'Bicol', 'Cordillera', 'Central Visayas', 'Caraga'];
 
+const fieldClass =
+  'w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground transition-colors placeholder:text-slate-400 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20';
+
+const checkboxClass = 'h-4 w-4 shrink-0 rounded border-slate-300 accent-primary cursor-pointer';
+
 export const DestinationsManagePage = () => {
   const [destinations, setDestinations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -247,42 +252,37 @@ export const DestinationsManagePage = () => {
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             Destinations Catalog
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="mt-1 text-sm text-muted-foreground">
             Configure Philippine travel hubs, GPS geo-coordinates, and publication visibility.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button
-            onClick={openCreateModal}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex items-center gap-1.5 shadow-sm"
-          >
-            <Plus className="h-4 w-4" />
-            Add Destination
-          </Button>
-        </div>
+        <Button onClick={openCreateModal} className="w-full shrink-0 sm:w-auto">
+          <Plus className="h-4 w-4" />
+          Add Destination
+        </Button>
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             placeholder="Search destination, region..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 text-sm"
+            className="pl-9"
           />
         </div>
         <div className="flex items-center gap-2">
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={`${fieldClass} h-10 flex-1 sm:w-48 sm:flex-none`}
           >
             <option value="">All Categories</option>
             {CATEGORIES.map((cat) => (
@@ -292,10 +292,10 @@ export const DestinationsManagePage = () => {
             ))}
           </select>
           <Button
-            variant="ghost"
-            size="sm"
+            variant="outline"
+            size="icon"
             onClick={fetchDestinations}
-            className="text-slate-500 hover:text-slate-800"
+            className="h-10 w-10 shrink-0 text-slate-500"
           >
             <RefreshCw className="h-4 w-4" />
           </Button>
@@ -304,18 +304,18 @@ export const DestinationsManagePage = () => {
 
       {/* Error Banner */}
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-center gap-2">
-          <AlertCircle className="h-4 w-4 shrink-0" />
+        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Destinations Table */}
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <Table>
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <Table className="min-w-[880px]">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[80px]">Preview</TableHead>
+              <TableHead className="w-[88px]">Preview</TableHead>
               <TableHead>Destination Name</TableHead>
               <TableHead>Region & Location</TableHead>
               <TableHead>Category</TableHead>
@@ -327,14 +327,14 @@ export const DestinationsManagePage = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-40 text-center text-slate-400">
-                  <RefreshCw className="mx-auto h-6 w-6 animate-spin text-emerald-600 mb-2" />
+                <TableCell colSpan={7} className="h-40 text-center text-muted-foreground">
+                  <RefreshCw className="mx-auto mb-2 h-5 w-5 animate-spin text-slate-400" />
                   Loading destinations...
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-40 text-center text-slate-400">
+                <TableCell colSpan={7} className="h-40 text-center text-muted-foreground">
                   No destinations found matching your filters.
                 </TableCell>
               </TableRow>
@@ -346,49 +346,43 @@ export const DestinationsManagePage = () => {
                       <img
                         src={dest.imageUrls[0]}
                         alt={dest.name}
-                        className="h-10 w-12 rounded object-cover border border-slate-200"
+                        className="h-11 w-14 rounded-md border border-border object-cover"
                       />
                     ) : (
-                      <div className="flex h-10 w-12 items-center justify-center rounded bg-slate-100 text-slate-400">
+                      <div className="flex h-11 w-14 items-center justify-center rounded-md bg-slate-100 text-slate-400">
                         <MapPin className="h-4 w-4" />
                       </div>
                     )}
                   </TableCell>
-                  <TableCell className="font-semibold text-slate-900">
+                  <TableCell>
                     <div className="flex items-center gap-2">
-                      <span>{dest.name}</span>
-                      {dest.isFeatured && (
-                        <Badge variant="warning" className="text-[10px] px-1.5 py-0">
-                          Featured
-                        </Badge>
-                      )}
+                      <span className="font-medium text-foreground">{dest.name}</span>
+                      {dest.isFeatured && <Badge variant="warning">Featured</Badge>}
                     </div>
                   </TableCell>
-                  <TableCell className="text-sm text-slate-600">
-                    <div>{dest.region}</div>
-                    <div className="text-xs text-slate-400">{dest.location}</div>
+                  <TableCell>
+                    <div className="text-slate-700">{dest.region}</div>
+                    <div className="text-xs text-muted-foreground">{dest.location}</div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary" className="text-xs">
-                      {dest.category}
-                    </Badge>
+                    <Badge variant="secondary">{dest.category}</Badge>
                   </TableCell>
-                  <TableCell className="text-xs font-mono text-slate-500">
+                  <TableCell className="whitespace-nowrap font-mono text-xs tabular-nums text-muted-foreground">
                     {dest.coordinates?.lat?.toFixed(4)}, {dest.coordinates?.lng?.toFixed(4)}
                   </TableCell>
                   <TableCell>
                     <button
                       type="button"
                       onClick={() => handleTogglePublish(dest)}
-                      className="cursor-pointer"
+                      className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
                       title="Click to toggle publish status"
                     >
                       {dest.isPublished ? (
-                        <Badge variant="success" className="flex items-center gap-1">
+                        <Badge variant="success">
                           <Check className="h-3 w-3" /> Published
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="text-slate-400 border-slate-300">
+                        <Badge variant="outline" className="text-slate-500">
                           Draft (Hidden)
                         </Badge>
                       )}
@@ -398,20 +392,20 @@ export const DestinationsManagePage = () => {
                     <div className="flex items-center justify-end gap-1">
                       <Button
                         variant="ghost"
-                        size="sm"
+                        size="icon"
                         onClick={() => openEditModal(dest)}
-                        className="h-8 w-8 p-0 text-slate-600 hover:text-emerald-600"
+                        className="h-8 w-8 text-slate-500 hover:text-foreground"
                       >
                         <Edit2 className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
-                        size="sm"
+                        size="icon"
                         onClick={() => {
                           setDestinationToDelete(dest);
                           setDeleteError('');
                         }}
-                        className="h-8 w-8 p-0 text-slate-600 hover:text-red-600"
+                        className="h-8 w-8 text-slate-500 hover:bg-red-50 hover:text-red-600"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -426,7 +420,7 @@ export const DestinationsManagePage = () => {
 
       {/* Create / Edit Modal Dialog */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>
               {editingDestination ? 'Edit Destination' : 'Add New Destination'}
@@ -436,12 +430,10 @@ export const DestinationsManagePage = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-4 py-2">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="dest-name" className="text-xs font-semibold">
-                  Destination Name *
-                </Label>
+                <Label htmlFor="dest-name">Destination Name *</Label>
                 <Input
                   id="dest-name"
                   placeholder="e.g. El Nido, Palawan"
@@ -452,14 +444,12 @@ export const DestinationsManagePage = () => {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="dest-category" className="text-xs font-semibold">
-                  Category
-                </Label>
+                <Label htmlFor="dest-category">Category</Label>
                 <select
                   id="dest-category"
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className={`${fieldClass} h-10`}
                 >
                   {CATEGORIES.map((c) => (
                     <option key={c} value={c}>
@@ -470,16 +460,14 @@ export const DestinationsManagePage = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="dest-region" className="text-xs font-semibold">
-                  Region
-                </Label>
+                <Label htmlFor="dest-region">Region</Label>
                 <select
                   id="dest-region"
                   value={formData.region}
                   onChange={(e) => setFormData({ ...formData, region: e.target.value })}
-                  className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className={`${fieldClass} h-10`}
                 >
                   {REGIONS.map((r) => (
                     <option key={r} value={r}>
@@ -490,9 +478,7 @@ export const DestinationsManagePage = () => {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="dest-location" className="text-xs font-semibold">
-                  Location Specifics
-                </Label>
+                <Label htmlFor="dest-location">Location Specifics</Label>
                 <Input
                   id="dest-location"
                   placeholder="e.g. Palawan, Philippines"
@@ -503,10 +489,10 @@ export const DestinationsManagePage = () => {
             </div>
 
             {/* Geoapify Coordinates Section */}
-            <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                  <LocateFixed className="h-3.5 w-3.5 text-emerald-600" />
+            <div className="space-y-3 rounded-md border border-border bg-slate-50 p-4">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <span className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                  <LocateFixed className="h-4 w-4 text-slate-400" />
                   GPS Coordinates (Geoapify Proxy)
                 </span>
                 <Button
@@ -515,14 +501,14 @@ export const DestinationsManagePage = () => {
                   size="sm"
                   onClick={handleAutoGeocode}
                   disabled={geocoding}
-                  className="h-7 text-xs bg-white text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+                  className="w-full sm:w-auto"
                 >
                   {geocoding ? 'Geocoding...' : 'Auto-Detect via Geoapify'}
                 </Button>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="dest-lat" className="text-[11px] text-slate-500">
+                <div className="space-y-1.5">
+                  <Label htmlFor="dest-lat" className="text-xs text-muted-foreground">
                     Latitude
                   </Label>
                   <Input
@@ -532,10 +518,11 @@ export const DestinationsManagePage = () => {
                     placeholder="11.1956"
                     value={formData.lat}
                     onChange={(e) => setFormData({ ...formData, lat: e.target.value })}
+                    className="font-mono tabular-nums"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="dest-lng" className="text-[11px] text-slate-500">
+                <div className="space-y-1.5">
+                  <Label htmlFor="dest-lng" className="text-xs text-muted-foreground">
                     Longitude
                   </Label>
                   <Input
@@ -545,29 +532,26 @@ export const DestinationsManagePage = () => {
                     placeholder="119.4075"
                     value={formData.lng}
                     onChange={(e) => setFormData({ ...formData, lng: e.target.value })}
+                    className="font-mono tabular-nums"
                   />
                 </div>
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="dest-desc" className="text-xs font-semibold">
-                Overview & Description
-              </Label>
+              <Label htmlFor="dest-desc">Overview & Description</Label>
               <textarea
                 id="dest-desc"
                 rows={3}
                 placeholder="Highlight attractions, natural beauty, cultural history..."
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full rounded-md border border-slate-200 bg-white p-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className={`${fieldClass} resize-y`}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="dest-activities" className="text-xs font-semibold">
-                Recommended Activities (Comma-separated)
-              </Label>
+              <Label htmlFor="dest-activities">Recommended Activities (Comma-separated)</Label>
               <Input
                 id="dest-activities"
                 placeholder="Island Hopping, Scuba Diving, Sunset Trekking"
@@ -587,33 +571,33 @@ export const DestinationsManagePage = () => {
             />
 
             {/* Visibility Toggles */}
-            <div className="flex items-center gap-6 pt-2">
-              <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700">
+            <div className="flex flex-col gap-3 rounded-md border border-border p-4 sm:flex-row sm:items-center sm:gap-8">
+              <label className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.isPublished}
                   onChange={(e) =>
                     setFormData({ ...formData, isPublished: e.target.checked })
                   }
-                  className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  className={checkboxClass}
                 />
                 Published (Visible on Customer Catalog)
               </label>
 
-              <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700">
+              <label className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.isFeatured}
                   onChange={(e) =>
                     setFormData({ ...formData, isFeatured: e.target.checked })
                   }
-                  className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  className={checkboxClass}
                 />
                 Featured on Homepage
               </label>
             </div>
 
-            <DialogFooter className="mt-4">
+            <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
@@ -621,11 +605,7 @@ export const DestinationsManagePage = () => {
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={saving}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
-              >
+              <Button type="submit" disabled={saving}>
                 {saving ? 'Saving...' : editingDestination ? 'Update Destination' : 'Create Destination'}
               </Button>
             </DialogFooter>
@@ -640,27 +620,28 @@ export const DestinationsManagePage = () => {
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-red-600 flex items-center gap-2">
-              <Trash2 className="h-5 w-5" />
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-red-600" />
               Confirm Safe Deletion
             </DialogTitle>
             <DialogDescription>
               Are you sure you want to permanently delete{' '}
-              <strong>{destinationToDelete?.name}</strong>?
+              <strong className="font-medium text-foreground">{destinationToDelete?.name}</strong>?
             </DialogDescription>
           </DialogHeader>
 
           {deleteError && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
-              {deleteError}
+            <div className="mb-3 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{deleteError}</span>
             </div>
           )}
 
-          <p className="text-xs text-slate-500">
+          <p className="rounded-md bg-slate-50 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
             Note: Lakbay prevents deleting destinations that have existing tour packages assigned to prevent broken reservations.
           </p>
 
-          <DialogFooter className="mt-4">
+          <DialogFooter>
             <Button
               variant="outline"
               onClick={() => setDestinationToDelete(null)}
@@ -668,11 +649,7 @@ export const DestinationsManagePage = () => {
             >
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              onClick={confirmDelete}
-              disabled={isDeleting}
-            >
+            <Button variant="destructive" onClick={confirmDelete} disabled={isDeleting}>
               {isDeleting ? 'Deleting...' : 'Confirm Delete'}
             </Button>
           </DialogFooter>

@@ -35,6 +35,9 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 
+const fieldClass =
+  'w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground transition-colors placeholder:text-slate-400 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500';
+
 export const DeparturesManagePage = () => {
   const [departures, setDepartures] = useState([]);
   const [packages, setPackages] = useState([]);
@@ -224,60 +227,53 @@ export const DeparturesManagePage = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             Departure Schedules & Slots
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="mt-1 text-sm text-muted-foreground">
             Schedule future tour departures, assign certified guides, and monitor capacity utilization.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button
-            onClick={openCreateModal}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex items-center gap-1.5 shadow-sm"
-          >
-            <Plus className="h-4 w-4" />
-            Schedule Departure
-          </Button>
-        </div>
+        <Button onClick={openCreateModal} className="w-full shrink-0 sm:w-auto">
+          <Plus className="h-4 w-4" />
+          Schedule Departure
+        </Button>
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-3">
-          <select
-            value={packageFilter}
-            onChange={(e) => setPackageFilter(e.target.value)}
-            className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          >
-            <option value="">All Tour Packages</option>
-            {packages.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+      <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center">
+        <select
+          value={packageFilter}
+          onChange={(e) => setPackageFilter(e.target.value)}
+          className={`${fieldClass} h-10 sm:w-64`}
+        >
+          <option value="">All Tour Packages</option>
+          {packages.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
 
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          >
-            <option value="">All Statuses</option>
-            <option value="open">Open (Available)</option>
-            <option value="full">Full (Capacity Reached)</option>
-            <option value="cancelled">Cancelled</option>
-            <option value="completed">Completed</option>
-          </select>
-        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className={`${fieldClass} h-10 sm:w-56`}
+        >
+          <option value="">All Statuses</option>
+          <option value="open">Open (Available)</option>
+          <option value="full">Full (Capacity Reached)</option>
+          <option value="cancelled">Cancelled</option>
+          <option value="completed">Completed</option>
+        </select>
 
         <Button
-          variant="ghost"
-          size="sm"
+          variant="outline"
+          size="icon"
           onClick={fetchData}
-          className="text-slate-500 hover:text-slate-800"
+          className="h-10 w-full text-slate-500 sm:ml-auto sm:w-10"
         >
           <RefreshCw className="h-4 w-4" />
         </Button>
@@ -285,37 +281,38 @@ export const DeparturesManagePage = () => {
 
       {/* Error Alert */}
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-center gap-2">
-          <AlertCircle className="h-4 w-4 shrink-0" />
+        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Table */}
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <Table>
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
+        {/* Fixed layout + sized columns: the table always fits its card, no sideways scrolling */}
+        <Table className="table-fixed [&_td]:px-3 [&_th]:px-3 [&_td:first-child]:pl-4 [&_th:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:last-child]:pr-4 [&_th]:whitespace-normal [&_th]:leading-tight">
           <TableHeader>
             <TableRow>
-              <TableHead>Tour Package</TableHead>
-              <TableHead>Schedule & Assembly</TableHead>
-              <TableHead>Meeting Point & Cutoff</TableHead>
-              <TableHead>Capacity & Bookings</TableHead>
-              <TableHead>Assigned Guide</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="w-[23%]">Tour Package</TableHead>
+              <TableHead className="w-[14%]">Schedule & Assembly</TableHead>
+              <TableHead className="w-[18%]">Meeting Point & Cutoff</TableHead>
+              <TableHead className="w-[14%]">Capacity & Bookings</TableHead>
+              <TableHead className="w-[11%]">Assigned Guide</TableHead>
+              <TableHead className="w-[104px]">Status</TableHead>
+              <TableHead className="w-[88px] text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-40 text-center text-slate-400">
-                  <RefreshCw className="mx-auto h-6 w-6 animate-spin text-emerald-600 mb-2" />
+                <TableCell colSpan={7} className="h-40 text-center text-muted-foreground">
+                  <RefreshCw className="mx-auto mb-2 h-5 w-5 animate-spin text-slate-400" />
                   Loading departure schedules...
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-40 text-center text-slate-400">
+                <TableCell colSpan={7} className="h-40 text-center text-muted-foreground">
                   No departure dates found matching filters.
                 </TableCell>
               </TableRow>
@@ -329,53 +326,50 @@ export const DeparturesManagePage = () => {
 
                 return (
                   <TableRow key={dep.id}>
-                    <TableCell className="font-semibold text-slate-900">
-                      <div>{pkg?.name || 'Tour Package'}</div>
-                      <div className="text-xs text-slate-400 font-normal">
+                    <TableCell>
+                      <div className="font-medium text-foreground">{pkg?.name || 'Tour Package'}</div>
+                      <div className="mt-0.5 text-xs text-muted-foreground">
                         {pkg?.durationDays || 1} Days Trip
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm text-slate-700">
-                      <div className="font-medium flex items-center gap-1.5">
+                    <TableCell>
+                      <div className="flex items-center gap-1.5 whitespace-nowrap font-medium tabular-nums text-slate-800">
                         <Calendar className="h-3.5 w-3.5 text-slate-400" />
                         {dep.departureDate}
                       </div>
-                      <div className="text-xs text-slate-400">
+                      <div className="mt-0.5 text-xs tabular-nums text-muted-foreground">
                         Until {dep.returnDate || dep.departureDate}
                       </div>
-                      <div className="text-xs text-emerald-700 font-medium flex items-center gap-1 mt-0.5">
-                        <Clock className="h-3 w-3" />
+                      <div className="mt-0.5 flex items-center gap-1 text-xs tabular-nums text-slate-600">
+                        <Clock className="h-3 w-3 text-slate-400" />
                         {dep.departureTime || '07:00 AM'}
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm">
-                      <div className="flex items-start gap-1 text-slate-800 text-xs font-medium max-w-[200px]" title={dep.meetingPoint}>
-                        <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0 mt-0.5" />
+                    <TableCell>
+                      <div className="flex min-w-0 items-start gap-1.5 text-slate-700" title={dep.meetingPoint}>
+                        <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
                         <span className="truncate">{dep.meetingPoint || 'Designated Harbor / Terminal'}</span>
                       </div>
-                      <div className="mt-1">
+                      <div className="mt-1.5">
                         {dep.isDeadlinePassed ? (
-                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5 font-normal">
-                            Cutoff Passed (Rule D)
-                          </Badge>
+                          <Badge variant="destructive" className="whitespace-normal">Cutoff Passed (Rule D)</Badge>
                         ) : (
-                          <span className="text-[11px] text-slate-500">
+                          <span className="text-xs text-muted-foreground">
                             Cutoff: {dep.bookingDeadlineHours !== undefined ? dep.bookingDeadlineHours : 24}h prior
                           </span>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="w-36 space-y-1">
-                        <div className="flex justify-between text-xs font-medium text-slate-600">
+                      <div className="w-full max-w-40 space-y-1.5">
+                        <div className="flex justify-between text-xs tabular-nums text-slate-600">
                           <span>{booked} / {capacity} Booked</span>
-                          <span>{pct}%</span>
+                          <span className="font-medium text-foreground">{pct}%</span>
                         </div>
-                        <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
                           <div
-                            className={`h-full rounded-full ${
-                              pct >= 100 ? 'bg-amber-500' : 'bg-emerald-500'
-                            }`}
+                            className={`h-full rounded-full ${pct >= 100 ? 'bg-amber-500' : 'bg-emerald-500'
+                              }`}
                             style={{ width: `${pct}%` }}
                           />
                         </div>
@@ -383,12 +377,12 @@ export const DeparturesManagePage = () => {
                     </TableCell>
                     <TableCell>
                       {guide ? (
-                        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                        <div className="flex items-center gap-1.5 text-slate-700">
                           <UserCheck className="h-3.5 w-3.5 text-emerald-600" />
                           <span>{guide.fullName || guide.displayName}</span>
                         </div>
                       ) : (
-                        <span className="text-xs text-slate-400 italic">Unassigned</span>
+                        <span className="text-xs text-muted-foreground">Unassigned</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -397,12 +391,12 @@ export const DeparturesManagePage = () => {
                           dep.status === 'open'
                             ? 'success'
                             : dep.status === 'full'
-                            ? 'warning'
-                            : dep.status === 'completed'
-                            ? 'info'
-                            : 'destructive'
+                              ? 'warning'
+                              : dep.status === 'completed'
+                                ? 'info'
+                                : 'destructive'
                         }
-                        className="capitalize text-xs font-semibold"
+                        className="capitalize"
                       >
                         {dep.status}
                       </Badge>
@@ -411,21 +405,21 @@ export const DeparturesManagePage = () => {
                       <div className="flex items-center justify-end gap-1">
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={() => openEditModal(dep)}
-                          className="h-8 w-8 p-0 text-slate-600 hover:text-emerald-600"
+                          className="h-8 w-8 text-slate-500 hover:text-foreground"
                         >
                           <Edit2 className="h-4 w-4" />
                         </Button>
                         {dep.status !== 'cancelled' && (
                           <Button
                             variant="ghost"
-                            size="sm"
+                            size="icon"
                             onClick={() => {
                               setCancellingDeparture(dep);
                               setCancelReason('');
                             }}
-                            className="h-8 w-8 p-0 text-slate-600 hover:text-red-600"
+                            className="h-8 w-8 text-slate-500 hover:bg-red-50 hover:text-red-600"
                             title="Cancel Departure"
                           >
                             <XCircle className="h-4 w-4" />
@@ -443,7 +437,7 @@ export const DeparturesManagePage = () => {
 
       {/* Create / Edit Modal Dialog */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
               {editingDeparture ? 'Edit Departure Schedule' : 'Schedule New Departure'}
@@ -454,26 +448,24 @@ export const DeparturesManagePage = () => {
           </DialogHeader>
 
           {editingDeparture && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800 flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+            <div className="mb-5 flex items-start gap-2.5 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
               <span>
-                <strong>Capacity Safety Guard:</strong> Currently has{' '}
-                <strong>{editingDeparture.bookedCount || 0} booked passenger(s)</strong>. Capacity cannot be reduced below this number.
+                <strong className="font-medium">Capacity Safety Guard:</strong> Currently has{' '}
+                <strong className="font-medium">{editingDeparture.bookedCount || 0} booked passenger(s)</strong>. Capacity cannot be reduced below this number.
               </span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4 py-2">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1.5">
-              <Label htmlFor="dep-pkg" className="text-xs font-semibold">
-                Tour Package *
-              </Label>
+              <Label htmlFor="dep-pkg">Tour Package *</Label>
               <select
                 id="dep-pkg"
                 value={formData.packageId}
                 onChange={(e) => handlePackageChange(e.target.value)}
                 disabled={Boolean(editingDeparture)}
-                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-slate-100"
+                className={`${fieldClass} h-10`}
                 required
               >
                 <option value="">Select Package</option>
@@ -485,11 +477,9 @@ export const DeparturesManagePage = () => {
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="dep-date" className="text-xs font-semibold">
-                  Departure Date *
-                </Label>
+                <Label htmlFor="dep-date">Departure Date *</Label>
                 <Input
                   id="dep-date"
                   type="date"
@@ -500,9 +490,7 @@ export const DeparturesManagePage = () => {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="ret-date" className="text-xs font-semibold">
-                  Return Date *
-                </Label>
+                <Label htmlFor="ret-date">Return Date *</Label>
                 <Input
                   id="ret-date"
                   type="date"
@@ -513,30 +501,27 @@ export const DeparturesManagePage = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="dep-time" className="text-xs font-semibold">
-                  Assembly / Departure Time *
-                </Label>
+                <Label htmlFor="dep-time">Assembly / Departure Time *</Label>
                 <Input
                   id="dep-time"
                   type="text"
                   placeholder="e.g. 06:30 AM"
                   value={formData.departureTime}
                   onChange={(e) => setFormData({ ...formData, departureTime: e.target.value })}
+                  className="tabular-nums"
                   required
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="dep-deadline" className="text-xs font-semibold">
-                  Booking Cutoff (Rule D) *
-                </Label>
+                <Label htmlFor="dep-deadline">Booking Cutoff (Rule D) *</Label>
                 <select
                   id="dep-deadline"
                   value={formData.bookingDeadlineHours}
                   onChange={(e) => setFormData({ ...formData, bookingDeadlineHours: Number(e.target.value) })}
-                  className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className={`${fieldClass} h-10`}
                 >
                   <option value={12}>12 Hours Before</option>
                   <option value={24}>24 Hours Before (Standard)</option>
@@ -547,9 +532,7 @@ export const DeparturesManagePage = () => {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="dep-meeting" className="text-xs font-semibold">
-                Meeting Point & Landmark *
-              </Label>
+              <Label htmlFor="dep-meeting">Meeting Point & Landmark *</Label>
               <Input
                 id="dep-meeting"
                 type="text"
@@ -558,35 +541,32 @@ export const DeparturesManagePage = () => {
                 onChange={(e) => setFormData({ ...formData, meetingPoint: e.target.value })}
                 required
               />
-              <p className="text-[11px] text-slate-400">
+              <p className="text-xs text-muted-foreground">
                 Printed on confirmed customer booking vouchers and receipts.
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="dep-cap" className="text-xs font-semibold">
-                  Total Capacity *
-                </Label>
+                <Label htmlFor="dep-cap">Total Capacity *</Label>
                 <Input
                   id="dep-cap"
                   type="number"
                   min={editingDeparture?.bookedCount || 1}
                   value={formData.capacity}
                   onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                  className="tabular-nums"
                   required
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="dep-status" className="text-xs font-semibold">
-                  Status
-                </Label>
+                <Label htmlFor="dep-status">Status</Label>
                 <select
                   id="dep-status"
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className={`${fieldClass} h-10`}
                 >
                   <option value="open">Open</option>
                   <option value="full">Full</option>
@@ -597,14 +577,12 @@ export const DeparturesManagePage = () => {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="dep-guide" className="text-xs font-semibold">
-                Assigned Tour Guide
-              </Label>
+              <Label htmlFor="dep-guide">Assigned Tour Guide</Label>
               <select
                 id="dep-guide"
                 value={formData.assignedGuideId}
                 onChange={(e) => setFormData({ ...formData, assignedGuideId: e.target.value })}
-                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className={`${fieldClass} h-10`}
               >
                 <option value="">-- No Guide Assigned Yet --</option>
                 {guides.map((g) => (
@@ -615,15 +593,11 @@ export const DeparturesManagePage = () => {
               </select>
             </div>
 
-            <DialogFooter className="mt-4">
+            <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={saving}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
-              >
+              <Button type="submit" disabled={saving}>
                 {saving ? 'Saving...' : editingDeparture ? 'Update Schedule' : 'Schedule Departure'}
               </Button>
             </DialogFooter>
@@ -638,31 +612,29 @@ export const DeparturesManagePage = () => {
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-red-600 flex items-center gap-2">
-              <XCircle className="h-5 w-5" />
+            <DialogTitle className="flex items-center gap-2">
+              <XCircle className="h-5 w-5 text-red-600" />
               Cancel Departure Schedule
             </DialogTitle>
             <DialogDescription>
               Are you sure you want to cancel the departure scheduled for{' '}
-              <strong>{cancellingDeparture?.departureDate}</strong>?
+              <strong className="font-medium text-foreground">{cancellingDeparture?.departureDate}</strong>?
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-3 py-2">
-            <Label htmlFor="cancel-reason" className="text-xs font-semibold">
-              Cancellation Reason (Logged in activity logs)
-            </Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="cancel-reason">Cancellation Reason (Logged in activity logs)</Label>
             <textarea
               id="cancel-reason"
               rows={3}
               placeholder="e.g. Inclement weather advisory from PAGASA, operational maintenance..."
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value)}
-              className="w-full rounded-md border border-slate-200 bg-white p-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500"
+              className={`${fieldClass} resize-y`}
             />
           </div>
 
-          <DialogFooter className="mt-4">
+          <DialogFooter>
             <Button
               variant="outline"
               onClick={() => setCancellingDeparture(null)}
@@ -670,11 +642,7 @@ export const DeparturesManagePage = () => {
             >
               Back
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleCancelDeparture}
-              disabled={cancelling}
-            >
+            <Button variant="destructive" onClick={handleCancelDeparture} disabled={cancelling}>
               {cancelling ? 'Cancelling...' : 'Confirm Cancellation'}
             </Button>
           </DialogFooter>

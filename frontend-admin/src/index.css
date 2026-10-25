@@ -1,39 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/*
+  Lakbay — Coron
+  Deep lagoon forest, warm sand paper, terracotta sunset accent.
+  Manrope for interface text, Instrument Serif for titles and figures, DM Mono for references.
+*/
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 38 38% 93%;
+    /* #F4EFE6 sand */
+    --foreground: 174 28% 10%;
+    /* #12201F ink */
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 174 28% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 174 28% 10%;
 
-    /* Backoffice Professional Slate & Emerald */
-    --primary: 158 64% 35%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 191 69% 13%;
+    /* #0A2E36 forest */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 160 33% 95%;
+    /* #EDF6F3 sage soft */
+    --secondary-foreground: 191 69% 13%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 40 60% 96%;
+    /* #FAF6EE head background */
+    --muted-foreground: 173 6% 43%;
+    /* #667573 */
 
-    --accent: 24 95% 53%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 11 100% 65%;
+    /* #FF6B4A terracotta */
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 6 51% 47%;
+    /* #B5473A */
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 158 64% 35%;
+    --border: 40 27% 87%;
+    /* #E8E1D3 */
+    --input: 40 22% 79%;
+    /* #D6CDBB */
+    --ring: 11 100% 65%;
 
-    --radius: 0.75rem;
+    --sidebar: 191 69% 13%;
+    /* #0A2E36 */
+    --sidebar-deep: 192 70% 8%;
+    /* #061D23 */
+    --sidebar-soft: 190 64% 22%;
+    /* #14505C */
+    --sidebar-foreground: 40 30% 92%;
+    --sidebar-muted: 185 12% 62%;
+    --sidebar-accent: 0 0% 100%;
+    --sidebar-border: 0 0% 100%;
+
+    --radius: 0.625rem;
+    /* 10px */
   }
 }
 
@@ -41,27 +69,326 @@
   * {
     @apply border-border;
   }
-  body {
-    @apply bg-background text-foreground;
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Outfit', sans-serif;
+
+  body {
+    @apply bg-background font-sans text-foreground;
+    background-image:
+      radial-gradient(900px 520px at 88% -8%, rgba(255, 107, 74, 0.1), transparent 60%),
+      radial-gradient(800px 600px at -5% 105%, rgba(20, 80, 92, 0.1), transparent 60%);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    background: #d3eae5;
+  }
+
+  *:focus-visible {
+    outline: 2px solid hsl(var(--accent));
+    outline-offset: 2px;
   }
 }
 
-/* Custom scrollbars */
+/* Paper grain — very faint, purely decorative */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/*
+  Instrument Serif ships a single weight. Never let the browser fake a bold version,
+  and give page titles the reference's display scale regardless of their utility classes.
+*/
+.font-heading,
+h1 {
+  font-synthesis: none;
+}
+
+main h1 {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-weight: 400 !important;
+  font-size: clamp(2rem, 1.4rem + 1.8vw, 2.7rem) !important;
+  line-height: 1.12 !important;
+  letter-spacing: -0.005em !important;
+}
+
+.admin-dialog-content {
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@supports (height: 100dvh) {
+  .admin-dialog-content {
+    max-height: calc(100dvh - 2rem);
+  }
+}
+
+@media (min-width: 640px) {
+  .admin-dialog-content {
+    max-height: calc(100vh - 3rem);
+  }
+
+  @supports (height: 100dvh) {
+    .admin-dialog-content {
+      max-height: calc(100dvh - 3rem);
+    }
+  }
+}
+
+/* Keep native controls aligned with the shared Input component on every page. */
+.page-shell :is(input:not([type='button']):not([type='submit']):not([type='reset']):not([type='checkbox']):not([type='radio']):not([type='file']),
+  select,
+  textarea) {
+  border-color: hsl(var(--input));
+  border-radius: var(--radius);
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+}
+
+.page-shell :is(input:not([type='button']):not([type='submit']):not([type='reset']):not([type='checkbox']):not([type='radio']):not([type='file']),
+  select,
+  textarea)::placeholder {
+  color: hsl(var(--muted-foreground));
+  opacity: 0.7;
+}
+
+.page-shell :is(input:not([type='button']):not([type='submit']):not([type='reset']):not([type='checkbox']):not([type='radio']):not([type='file']),
+  select,
+  textarea):focus-visible {
+  border-color: hsl(var(--primary));
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.12);
+}
+
+.page-shell :is(input:not([type='button']):not([type='submit']):not([type='reset']):not([type='checkbox']):not([type='radio']):not([type='file']),
+  select,
+  textarea):disabled {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+  cursor: not-allowed;
+}
+
+/*
+  Mobile card mode for <Table>.
+  table.jsx copies each column header onto its cells as data-label; below 768px
+  every row becomes a card and every cell a "label | value" line.
+*/
+@media (max-width: 767px) {
+  .admin-data-table {
+    display: block;
+    width: 100% !important;
+    min-width: 0 !important;
+    /* cancels the min-w-[…] used for desktop scrolling */
+    table-layout: fixed;
+  }
+
+  /* Header stays readable to screen readers, hidden visually */
+  .admin-data-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .admin-data-table tbody {
+    display: grid;
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .admin-data-table tbody tr {
+    display: block;
+    overflow: hidden;
+    border: 1px solid hsl(var(--border)) !important;
+    /* beats tbody's last-row border-0 */
+    border-radius: var(--radius);
+    background: hsl(var(--card));
+    box-shadow: 0 1px 2px rgb(6 29 35 / 0.04);
+  }
+
+  .admin-data-table tbody tr:hover {
+    background: hsl(var(--card));
+  }
+
+  /*
+    Label in column 1, cell content stacked in column 2.
+    The label spans many rows so a cell with several lines (name + email,
+    amount + guests, stacked badges) keeps all of them in the value column.
+  */
+  .admin-data-table tbody td[data-label] {
+    display: grid;
+    grid-template-columns: minmax(5.5rem, 0.8fr) minmax(0, 1.4fr);
+    align-items: start;
+    column-gap: 0.75rem;
+    row-gap: 0;
+    /* gaps between the label's many implicit rows would add up */
+    min-width: 0;
+    padding: 0.7rem 0.8rem;
+    border-bottom: 1px solid hsl(var(--border) / 0.7);
+    text-align: right;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-data-table tbody td[data-label]>* {
+    grid-column: 2;
+    justify-self: end;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .admin-data-table tbody td[data-label]>*+* {
+    margin-top: 0.2rem;
+  }
+
+  .admin-data-table tbody td[data-label]::before {
+    content: attr(data-label);
+    grid-column: 1;
+    grid-row: 1 / span 20;
+    padding-top: 0.1rem;
+    color: hsl(var(--muted-foreground));
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    line-height: 1.35;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  /* Columns with an empty header (e.g. image previews): no label, content full width */
+  .admin-data-table tbody td[data-label=''] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-data-table tbody td[data-label='']::before {
+    display: none;
+  }
+
+  .admin-data-table tbody td[data-label='']>* {
+    grid-column: 1;
+  }
+
+  /* First cell reads as the card's title row */
+  .admin-data-table tbody td[data-label]:first-child {
+    background: hsl(var(--muted));
+  }
+
+  /* Action columns: no label, buttons aligned to the right as the card's footer */
+  .admin-data-table tbody td[data-label*='Action'] {
+    display: flex;
+    justify-content: flex-end;
+    background: hsl(var(--muted));
+  }
+
+  .admin-data-table tbody td[data-label*='Action']::before {
+    display: none;
+  }
+
+  .admin-data-table tbody td[data-label]:last-child {
+    border-bottom: 0;
+  }
+
+  /* Loading / empty-state rows (colSpan cells carry no label) */
+  .admin-data-table tbody td:not([data-label]) {
+    display: block;
+    padding: 2rem 1rem;
+    text-align: center;
+  }
+}
+
+/* Staggered entrance for the blocks of each page */
+.page-shell>*>* {
+  animation: rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.page-shell>*>*:nth-child(2) {
+  animation-delay: 0.07s;
+}
+
+.page-shell>*>*:nth-child(3) {
+  animation-delay: 0.14s;
+}
+
+.page-shell>*>*:nth-child(4) {
+  animation-delay: 0.21s;
+}
+
+.page-shell>*>*:nth-child(5) {
+  animation-delay: 0.28s;
+}
+
+.page-shell>*>*:nth-child(n + 6) {
+  animation-delay: 0.32s;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
+
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+  background: #cdc3ae;
+  border-radius: 10px;
+  border: 3px solid transparent;
+  background-clip: content-box;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+
+.scrollbar-dark {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+  overscroll-behavior: contain;
+}
+
+.scrollbar-dark:hover {
+  scrollbar-color: rgba(255, 107, 74, 0.65) transparent;
+}
+
+.scrollbar-dark::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-dark::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border: 0;
+  border-radius: 6px;
+}
+
+.scrollbar-dark::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 107, 74, 0.7);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
 }
