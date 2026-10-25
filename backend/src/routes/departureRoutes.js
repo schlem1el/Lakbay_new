@@ -6,14 +6,14 @@ import {
   updateDeparture,
   cancelDeparture,
 } from '../controllers/departureController.js';
-import { verifyToken } from '../middlewares/authMiddleware.js';
+import { verifyToken, optionalToken } from '../middlewares/authMiddleware.js';
 import { requireRoles } from '../middlewares/roleMiddleware.js';
 
 const router = Router();
 
-// Public routes (filtered to open future departures for non-staff)
-router.get('/', getDepartures);
-router.get('/:id', getDepartureById);
+// Public routes (filtered to open future departures for non-staff, allows staff & operators to view all)
+router.get('/', optionalToken, getDepartures);
+router.get('/:id', optionalToken, getDepartureById);
 
 // Protected routes (Coordinator, Admin, & Operator)
 router.post('/', verifyToken, requireRoles('coordinator', 'admin', 'operator'), createDeparture);

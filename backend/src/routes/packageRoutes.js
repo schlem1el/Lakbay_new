@@ -9,15 +9,15 @@ import {
   approvePackage,
   rejectPackage,
 } from '../controllers/packageController.js';
-import { verifyToken } from '../middlewares/authMiddleware.js';
+import { verifyToken, optionalToken } from '../middlewares/authMiddleware.js';
 import { requireRoles } from '../middlewares/roleMiddleware.js';
 
 const router = Router();
 
-// Public routes
-router.get('/', getPackages);
+// Public routes (with optionalToken to recognize staff & operator credentials)
+router.get('/', optionalToken, getPackages);
 router.get('/featured', getFeaturedPackages);
-router.get('/:id', getPackageById);
+router.get('/:id', optionalToken, getPackageById);
 
 // Protected routes (Coordinator, Admin, & Operator)
 router.post('/', verifyToken, requireRoles('coordinator', 'admin', 'operator'), createPackage);
